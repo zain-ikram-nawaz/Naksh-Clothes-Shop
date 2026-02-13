@@ -2,100 +2,78 @@ import Link from 'next/link';
 import Navbar from '@/components/ui/Navbar';
 import ProductCard from '@/components/products/ProductCard';
 import Footer from '@/components/ui/Footer';
+import connectDB from '@/lib/mongodb';
+import Category from '@/models/Category';
+import Product from '@/models/Product';
 
-async function getCategory(slug) {
-  try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/categories`, {
-      cache: 'no-store',
-    });
-    const data = await res.json();
-    if (data.success) {
-      return data.data.find(cat => cat.slug === slug);
-    }
-    return null;
-  } catch (error) {
-    console.error('Error fetching category:', error);
-    return null;
-  }
-}
+export const dynamic = 'force-dynamic';
 
-async function getCategoryProducts(categoryId) {
+async function getData(slug) {
   try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_APP_URL}/api/products?category=${categoryId}&limit=20`,
-      { cache: 'no-store' }
-    );
-    const data = await res.json();
-    return data.success ? data.data : [];
+    await connectDB();
+    const category = await Category.findOne({ slug }).lean();
+    if (!category) return { category: null, products: [] };
+
+    const products = await Product.find({ category: category._id, status: 'active' })
+      .limit(20)
+      .lean();
+
+    return {
+      category: JSON.parse(JSON.stringify(category)),
+      products: JSON.parse(JSON.stringify(products)),
+    };
   } catch (error) {
-    console.error('Error fetching products:', error);
-    return [];
+    return { category: null, products: [] };
   }
 }
 
 export default async function CategoryPage({ params }) {
-  const category = await getCategory(params.slug);
+  const { category, products } = await getData(params.slug);
 
   if (!category) {
     return (
-      <>
+      <div className="min-h-screen bg-[#f8fafc] flex flex-col">
         <Navbar />
-        <div className="container mx-auto px-4 py-16 text-center">
-          <h1 className="text-3xl font-bold mb-4">Category Not Found</h1>
-          <Link href="/products" className="text-blue-600 hover:underline">
-            Back to Products
-          </Link>
+        <div className="flex-grow flex flex-col items-center justify-center p-6">
+          <h1 className="text-2xl font-bold text-slate-800">Category Not Found</h1>
+          <Link href="/categories" className="mt-4 text-blue-600 font-medium hover:underline">← Back to all categories</Link>
         </div>
         <Footer />
-      </>
+      </div>
     );
   }
 
-  const products = await getCategoryProducts(category._id);
-
   return (
-    <>
+    <div className="bg-[#f8fafc] min-h-screen flex flex-col">
       <Navbar />
-
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-6 py-10 flex-grow">
         {/* Breadcrumb */}
-        <div className="text-sm text-gray-600 mb-6">
+        <nav className="flex text-xs font-medium text-slate-400 uppercase tracking-widest mb-8">
           <Link href="/" className="hover:text-blue-600">Home</Link>
-          <span className="mx-2">/</span>
+          <span className="mx-3">/</span>
           <Link href="/categories" className="hover:text-blue-600">Categories</Link>
-          <span className="mx-2">/</span>
-          <span className="text-gray-900">{category.name}</span>
-        </div>
+          <span className="mx-3">/</span>
+          <span className="text-slate-800">{category.name}</span>
+        </nav>
 
-        {/* Category Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-4">{category.name}</h1>
-          {category.description && (
-            <p className="text-gray-600 text-lg">{category.description}</p>
-          )}
-        </div>
+        <header className="mb-12">
+          <h1 className="text-4xl font-extrabold text-slate-900 mb-4">{category.name}</h1>
+          {category.description && <p className="text-slate-500 max-w-2xl text-lg">{category.description}</p>}
+        </header>
 
-        {/* Products Grid */}
         {products.length === 0 ? (
-          <div className="text-center py-16">
-            <p className="text-xl text-gray-600">No products found in this category</p>
-            <Link href="/products" className="text-blue-600 hover:underline mt-4 inline-block">
-              Browse All Products
-            </Link>
+          <div className="bg-white border border-slate-200 rounded-3xl p-20 text-center shadow-sm">
+            <p className="text-slate-400 text-lg">No products available in this category yet.</p>
           </div>
         ) : (
-          <>
-            <p className="text-gray-600 mb-6">{products.length} products found</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {products.map((product) => (
-                <ProductCard key={product._id} product={product} />
-              ))}
-            </div>
-          </>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {products.map((product) => (
+              <ProductCard key={product._id} product={product} />
+            ))}
+          </div>
         )}
       </div>
-
       <Footer />
-    </>
+    </div>
   );
 }
