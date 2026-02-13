@@ -96,14 +96,14 @@ export default function ProductForm({ product = null, isEdit = false }) {
           body: formDataImg,
         });
 
-        const data = await res.json();
-        if (data.success) {
-          uploadedImages.push({
-            url: data.data.url,
-            publicId: data.data.publicId,
-            alt: formData.name,
-          });
-        }
+      const data = await res.json();
+if (data.success) {
+  uploadedImages.push({
+    url: data.data.url,
+    publicId: data.data.publicId,
+    alt: formData.name || 'Product Image', // Name agar empty ho toh fallback
+  });
+}
       }
 
       setFormData({

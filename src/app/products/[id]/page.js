@@ -1,23 +1,25 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import Navbar from '@/components/ui/Navbar';
 import Footer from '@/components/ui/Footer';
 import ProductGallery from '@/components/products/ProductGallery';
 import AddToCartButton from '@/components/products/AddToCartButton';
+import connectDB from '@/lib/mongodb';
+import Product from '@/models/Product';
+import Category from '@/models/Category';
+
+export const dynamic = 'force-dynamic';
+
 async function getProduct(id) {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/products/${id}`, {
-      cache: 'no-store',
-    });
-
-    if (!res.ok) {
-      // This prevents the "Unexpected end of JSON" error
-      console.error(`Fetch failed with status: ${res.status}`);
-      return null;
+    await connectDB();
+    const isObjectId = /^[0-9a-fA-F]{24}$/.test(id);
+    let product;
+    if (isObjectId) {
+      product = await Product.findById(id).populate('category').lean();
+    } else {
+      product = await Product.findOne({ slug: id }).populate('category').lean();
     }
-
-    const data = await res.json();
-    return data.success ? data.data : null;
+    return product ? JSON.parse(JSON.stringify(product)) : null;
   } catch (error) {
     console.error('Error fetching product:', error);
     return null;
@@ -25,37 +27,25 @@ async function getProduct(id) {
 }
 
 export async function generateMetadata({ params }) {
-  const resolvedParams = await params; // ✅ Await params
-  const product = await getProduct(resolvedParams.id);
-
-  if (!product) {
-    return {
-      title: 'Product Not Found',
-    };
-  }
-
+  const { id } = await params;
+  const product = await getProduct(id);
+  if (!product) return { title: 'Product Not Found' };
   return {
-    title: `${product.name} - Vankea`,
+    title: `${product.name} — Vankea Studio`,
     description: product.shortDescription || product.description,
   };
 }
 
 export default async function ProductDetailPage({ params }) {
-  const resolvedParams = await params; // ✅ Await params
-  const product = await getProduct(resolvedParams.id);
+  const { id } = await params;
+  const product = await getProduct(id);
 
   if (!product) {
     return (
-      <>
-        <Navbar />
-        <div className="container mx-auto px-4 py-16 text-center">
-          <h1 className="text-3xl font-bold mb-4">Product Not Found</h1>
-          <Link href="/products" className="text-blue-600 hover:underline">
-            Back to Products
-          </Link>
-        </div>
-        <Footer />
-      </>
+       <div className="bg-[#f8fafc] min-h-screen flex flex-col justify-center items-center">
+         <h1 className="text-4xl font-black">PIECE NOT FOUND</h1>
+         <Link href="/products" className="mt-4 underline text-xs tracking-widest">BACK TO COLLECTION</Link>
+       </div>
     );
   }
 
@@ -64,173 +54,160 @@ export default async function ProductDetailPage({ params }) {
     : 0;
 
   return (
-    <>
+    <div className="bg-[#f8fafc] min-h-screen">
       <Navbar />
 
-      <div className="container mx-auto px-4 py-8">
-        {/* Breadcrumb */}
-        <div className="text-sm text-gray-600 mb-6">
-          <Link href="/" className="hover:text-blue-600">Home</Link>
-          <span className="mx-2">/</span>
-          <Link href="/products" className="hover:text-blue-600">Products</Link>
-          <span className="mx-2">/</span>
-          <span className="text-gray-900">{product.name}</span>
-        </div>
+      <main className="container mx-auto px-6 py-12">
+        {/* Minimal Breadcrumb */}
+        <nav className="text-[10px] uppercase tracking-[0.2em] font-bold text-slate-400 mb-10 flex gap-2">
+          <Link href="/" className="hover:text-black">Home</Link>
+          <span>/</span>
+          <Link href="/products" className="hover:text-black">Products</Link>
+          <span>/</span>
+          <span className="text-black italic">{product.name}</span>
+        </nav>
 
-        <div className="grid md:grid-cols-2 gap-12">
-          {/* Product Images */}
-          <div>
-            <ProductGallery images={product.images} productName={product.name} />
+        <div className="grid lg:grid-cols-12 gap-16">
+          {/* Left: Gallery */}
+          <div className="lg:col-span-7">
+            <div className="sticky top-28">
+               <ProductGallery images={product.images} productName={product.name} />
+            </div>
           </div>
 
-          {/* Product Info */}
-          <div>
-            <h1 className="text-3xl font-bold mb-4">{product.name}</h1>
+          {/* Right: Info */}
+          <div className="lg:col-span-5 space-y-10">
+            <section>
+              <span className="text-[10px] uppercase tracking-[0.3em] font-black text-blue-600 mb-2 block">
+                {product.brand || 'Vankea Original'}
+              </span>
+              <h1 className="text-5xl font-black uppercase tracking-tighter leading-none text-slate-900 mb-6">
+                {product.name}
+              </h1>
 
-            {/* Rating */}
-            {product.rating > 0 && (
-              <div className="flex items-center gap-2 mb-4">
-                <div className="flex text-yellow-400">
+              {/* Rating Mini */}
+              {product.rating > 0 && (
+                <div className="flex items-center gap-1 mb-6">
                   {[...Array(5)].map((_, i) => (
-                    <svg
-                      key={i}
-                      className={`w-5 h-5 ${i < Math.floor(product.rating) ? 'fill-current' : 'fill-gray-300'}`}
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-                    </svg>
+                    <span key={i} className={i < Math.floor(product.rating) ? "text-yellow-400" : "text-slate-200"}>★</span>
                   ))}
+                  <span className="text-[10px] font-bold text-slate-400 ml-2">({product.numReviews} REVIEWS)</span>
                 </div>
-                <span className="text-gray-600">({product.numReviews} reviews)</span>
-              </div>
-            )}
+              )}
 
-            {/* Price */}
-            <div className="mb-6">
-              <div className="flex items-center gap-4">
-                <span className="text-3xl font-bold text-gray-900">₹{product.price}</span>
+              <div className="flex items-baseline gap-4">
+                <span className="text-4xl font-black text-slate-900 tracking-tighter">₹{product.price}</span>
                 {product.comparePrice && (
-                  <>
-                    <span className="text-xl text-gray-500 line-through">₹{product.comparePrice}</span>
-                    <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">
-                      {discountPercentage}% OFF
-                    </span>
-                  </>
+                  <span className="text-xl text-slate-300 line-through font-medium">₹{product.comparePrice}</span>
+                )}
+                {discountPercentage > 0 && (
+                  <span className="text-[10px] font-black bg-red-50 text-red-500 px-2 py-1 uppercase">-{discountPercentage}%</span>
                 )}
               </div>
-            </div>
+            </section>
 
-            {/* Short Description */}
-            {product.shortDescription && (
-              <p className="text-gray-700 mb-6">{product.shortDescription}</p>
-            )}
-
-            {/* Product Type & Category */}
-            <div className="mb-6 space-y-2">
-              <p className="text-sm">
-                <span className="font-semibold">Type:</span>{' '}
-                <span className="capitalize">{product.productType.replace('-', ' ')}</span>
-              </p>
-              {product.category && (
-                <p className="text-sm">
-                  <span className="font-semibold">Category:</span>{' '}
-                  <Link href={`/categories/${product.category.slug}`} className="text-blue-600 hover:underline">
-                    {product.category.name}
-                  </Link>
-                </p>
-              )}
-            </div>
-
-            {/* Colors */}
-            {product.colors && product.colors.length > 0 && (
-              <div className="mb-6">
-                <h3 className="font-semibold mb-3">Available Colors:</h3>
-                <div className="flex gap-3">
-                  {product.colors.map((color, index) => (
-                    <div key={index} className="flex flex-col items-center gap-1">
-                      <div
-                        className="w-10 h-10 rounded-full border-2 border-gray-300 cursor-pointer hover:border-blue-600"
-                        style={{ backgroundColor: color.hexCode }}
-                        title={color.name}
-                      ></div>
-                      <span className="text-xs text-gray-600">{color.name}</span>
+            {/* Colors Section */}
+            {product.colors?.length > 0 && (
+              <div>
+                <h3 className="text-[10px] uppercase tracking-widest font-black mb-4 text-slate-400">Available Palette</h3>
+                <div className="flex gap-4">
+                  {product.colors.map((color, i) => (
+                    <div key={i} className="flex flex-col items-center gap-2">
+                      <div className="w-8 h-8 rounded-full border border-slate-200 p-0.5 hover:scale-110 transition-all cursor-pointer">
+                        <div className="w-full h-full rounded-full" style={{ backgroundColor: color.hexCode }} />
+                      </div>
+                      <span className="text-[8px] font-bold text-slate-500 uppercase tracking-tighter">{color.name}</span>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Sizes */}
-            {product.sizes && product.sizes.length > 0 && (
-              <div className="mb-6">
-                <h3 className="font-semibold mb-3">Available Sizes:</h3>
-                <div className="flex gap-3">
-                  {product.sizes.map((sizeObj, index) => (
-                    <div
-                      key={index}
-                      className={`border-2 px-4 py-2 rounded-lg ${
-                        sizeObj.stock > 0
-                          ? 'border-gray-300 hover:border-blue-600 cursor-pointer'
-                          : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+            {/* Sizes Section
+            {product.sizes?.length > 0 && (
+              <div>
+                <h3 className="text-[10px] uppercase tracking-widest font-black mb-4 text-slate-400">Select Dimension</h3>
+                <div className="flex flex-wrap gap-2">
+                  {product.sizes.map((s, i) => (
+                    <button
+                      key={i}
+                      disabled={s.stock === 0}
+                      className={`px-6 py-3 text-xs font-black border transition-all ${
+                        s.stock > 0
+                        ? 'border-slate-200 hover:border-black hover:bg-black hover:text-white'
+                        : 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed line-through'
                       }`}
                     >
-                      {sizeObj.size}
-                      {sizeObj.stock === 0 && <span className="block text-xs">Out of stock</span>}
-                    </div>
+                      {s.size}
+                    </button>
                   ))}
                 </div>
               </div>
-            )}
+            )} */}
 
-            {/* Material & Care */}
-            <div className="mb-6 bg-gray-50 p-4 rounded-lg">
-              <h3 className="font-semibold mb-2">Material & Care:</h3>
-              <p className="text-sm text-gray-700 mb-2">{product.material}</p>
-              {product.careInstructions && product.careInstructions.length > 0 && (
-                <ul className="text-sm text-gray-600 space-y-1">
-                  {product.careInstructions.map((instruction, index) => (
-                    <li key={index}>• {instruction}</li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            {/* Features */}
-            {product.features && product.features.length > 0 && (
-              <div className="mb-6">
-                <h3 className="font-semibold mb-2">Features:</h3>
-                <ul className="text-sm text-gray-700 space-y-1">
-                  {product.features.map((feature, index) => (
-                    <li key={index}>✓ {feature}</li>
+            {/* Features (Checklist style) */}
+            {product.features?.length > 0 && (
+              <div className="py-6 border-t border-slate-100">
+                <h3 className="text-[10px] uppercase tracking-widest font-black mb-4 text-slate-400">Key Attributes</h3>
+                <ul className="grid grid-cols-2 gap-y-2">
+                  {product.features.map((feature, i) => (
+                    <li key={i} className="text-[11px] font-bold text-slate-600 flex items-center gap-2">
+                      <span className="text-blue-500 text-lg">·</span> {feature.toUpperCase()}
+                    </li>
                   ))}
                 </ul>
               </div>
             )}
 
-            {/* Add to Cart */}
             <AddToCartButton product={product} />
 
-            {/* Additional Info */}
-            <div className="mt-8 border-t pt-6 space-y-2 text-sm text-gray-600">
-              {product.sku && <p><span className="font-semibold">SKU:</span> {product.sku}</p>}
-              {product.brand && <p><span className="font-semibold">Brand:</span> {product.brand}</p>}
-              {product.madeIn && <p><span className="font-semibold">Made In:</span> {product.madeIn}</p>}
+            {/* Material & Care Card */}
+            <div className="bg-white border border-slate-100 p-6 space-y-4">
+              <div>
+                <h3 className="text-[10px] uppercase tracking-widest font-black text-slate-400 mb-2">Material Composition</h3>
+                <p className="text-xs font-bold text-slate-800">{product.material || 'NOT SPECIFIED'}</p>
+              </div>
+              {product.careInstructions?.length > 0 && (
+                <div>
+                  <h3 className="text-[10px] uppercase tracking-widest font-black text-slate-400 mb-2">Care Guide</h3>
+                  <div className="text-[10px] font-medium text-slate-500 space-y-1">
+                    {product.careInstructions.map((ins, i) => <p key={i}>• {ins}</p>)}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Minimalist Specs Table */}
+            <div className="pt-6 space-y-3">
+               {[
+                 { label: 'SKU', value: product.sku },
+                 { label: 'Category', value: product.category?.name, link: `/categories/${product.category?.slug}` },
+                 { label: 'Origin', value: product.madeIn },
+                 { label: 'Type', value: product.productType?.replace('-', ' ') }
+               ].map((spec, i) => spec.value && (
+                 <div key={i} className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest py-2 border-b border-slate-50">
+                   <span className="text-slate-400">{spec.label}</span>
+                   {spec.link ? (
+                     <Link href={spec.link} className="text-blue-600 hover:underline">{spec.value}</Link>
+                   ) : (
+                     <span className="text-slate-900">{spec.value}</span>
+                   )}
+                 </div>
+               ))}
             </div>
           </div>
         </div>
 
-        {/* Full Description */}
-        {product.description && (
-          <div className="mt-12 border-t pt-8">
-            <h2 className="text-2xl font-bold mb-4">Product Description</h2>
-            <div className="prose max-w-none text-gray-700">
-              {product.description}
-            </div>
+        {/* Studio Notes (Full Description) */}
+        <div className="mt-32 max-w-4xl mx-auto border-t border-slate-200 pt-20 text-center">
+          <h2 className="text-[11px] uppercase font-black tracking-[0.5em] mb-12 text-slate-400">Studio Notes & Composition</h2>
+          <div className="prose prose-slate max-w-none text-slate-600 leading-relaxed font-medium italic text-lg">
+             "{product.description}"
           </div>
-        )}
-      </div>
+        </div>
+      </main>
 
       <Footer />
-    </>
+    </div>
   );
 }

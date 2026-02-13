@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Product from '@/models/Product';
 import { authMiddleware } from '@/middleware/auth';
-import { deleteMultipleImages } from '@/lib/cloudinary';
+import { deleteMultipleImages, uploadImage } from '@/lib/cloudinary';
 
 // GET - Get all products (Admin)
 async function getProducts(request) {
@@ -46,47 +46,25 @@ async function getProducts(request) {
   }
 }
 
-// POST - Create new product (Admin)
+// route.js mein createProduct function ko aise update karein:
 async function createProduct(request) {
   try {
     await connectDB();
-
     const data = await request.json();
 
-    // Generate slug from name
-    const slug = data.name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '');
-
-    // Check if slug already exists
-    const existingProduct = await Product.findOne({ slug });
-    if (existingProduct) {
-      return NextResponse.json(
-        { success: false, message: 'Product with this name already exists' },
-        { status: 400 }
-      );
-    }
+    // Frontend pehle hi images upload kar chuka hai,
+    // isliye humein sirf data save karna hai.
+    const slug = data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
     const product = await Product.create({
       ...data,
       slug,
+      // data.images mein pehle se {url, publicId, alt} maujood hai
     });
 
-    return NextResponse.json(
-      {
-        success: true,
-        message: 'Product created successfully',
-        data: product,
-      },
-      { status: 201 }
-    );
+    return NextResponse.json({ success: true, data: product }, { status: 201 });
   } catch (error) {
-    console.error('Create product error:', error);
-    return NextResponse.json(
-      { success: false, message: 'Server error', error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
 
