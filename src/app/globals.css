@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* Agar aapke paas koi custom theme variables hain (bigbeartheme ke liye), toh wo aise likhein: */
+@theme {
+  --color-main-bg: #f8fafc;
+  --font-sans: 'Inter', sans-serif;
+}
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {

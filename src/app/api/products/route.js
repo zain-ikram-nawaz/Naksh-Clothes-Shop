@@ -2,19 +2,22 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Product from '@/models/Product';
 
-// GET - Get all products with filtering, sorting, pagination
+// --- FIX: Build error ke liye ye line sabse zaroori hai ---
+export const dynamic = 'force-dynamic';
+
 export async function GET(request) {
   try {
     await connectDB();
 
+    // URL parameters extract karna (Dynamic behavior)
     const { searchParams } = new URL(request.url);
 
-    // Pagination
+    // Pagination logic
     const page = parseInt(searchParams.get('page')) || 1;
     const limit = parseInt(searchParams.get('limit')) || 12;
     const skip = (page - 1) * limit;
 
-    // Filters
+    // Filters logic
     const category = searchParams.get('category');
     const productType = searchParams.get('type');
     const minPrice = searchParams.get('minPrice');
@@ -25,11 +28,11 @@ export async function GET(request) {
     const featured = searchParams.get('featured');
     const trending = searchParams.get('trending');
 
-    // Sort
+    // Sort logic
     const sortBy = searchParams.get('sortBy') || 'createdAt';
     const sortOrder = searchParams.get('sortOrder') === 'asc' ? 1 : -1;
 
-    // Build query
+    // Build query object
     let query = { status: 'active' };
 
     if (category) query.category = category;
@@ -53,7 +56,7 @@ export async function GET(request) {
       ];
     }
 
-    // Execute query
+    // Execute database query
     const products = await Product.find(query)
       .populate('category', 'name slug')
       .sort({ [sortBy]: sortOrder })

@@ -28,8 +28,8 @@ async function getData(slug) {
 }
 
 export default async function CategoryPage({ params }) {
-  const { category, products } = await getData(params.slug);
-
+ const resolvedParams = await params;
+  const { category, products } = await getData(resolvedParams.slug);
   if (!category) {
     return (
       <div className="min-h-screen bg-[#f8fafc] flex flex-col">
