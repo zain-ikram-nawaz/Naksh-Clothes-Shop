@@ -1,9 +1,11 @@
+// app/api/admin/upload/route.js
+
 import { NextResponse } from 'next/server';
 import { authMiddleware } from '@/middleware/auth';
 import { uploadImage, deleteImage } from '@/lib/cloudinary';
 
-// POST - Upload image to Cloudinary
-async function uploadImageHandler(request) {
+// POST - Upload image to Cloudinary (WITHOUT AUTH)
+export async function POST(request) {
   try {
     const formData = await request.formData();
     const file = formData.get('file');
@@ -38,7 +40,7 @@ async function uploadImageHandler(request) {
   }
 }
 
-// DELETE - Delete image from Cloudinary
+// DELETE - Delete image from Cloudinary (WITH AUTH)
 async function deleteImageHandler(request) {
   try {
     const { publicId } = await request.json();
@@ -65,5 +67,4 @@ async function deleteImageHandler(request) {
   }
 }
 
-export const POST = (request) => authMiddleware(uploadImageHandler, true)(request);
 export const DELETE = (request) => authMiddleware(deleteImageHandler, true)(request);

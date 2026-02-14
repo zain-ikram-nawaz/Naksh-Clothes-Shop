@@ -52,19 +52,36 @@ async function createProduct(request) {
     await connectDB();
     const data = await request.json();
 
-    // Frontend pehle hi images upload kar chuka hai,
-    // isliye humein sirf data save karna hai.
-    const slug = data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    // 1. Data Cleaning: Ensure numbers are actually numbers
+    if (data.price) data.price = Number(data.price);
+    if (data.comparePrice) data.comparePrice = Number(data.comparePrice);
+
+    // 2. Slug Generation
+    const slug = data.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '') + '-' + Math.random().toString(36).substring(2, 7); // Unique suffix
+
+    // 3. Category Fix: Agar frontend se object aa raha hai toh sirf ID nikalein
+    if (data.category && typeof data.category === 'object') {
+      data.category = data.category._id;
+    }
 
     const product = await Product.create({
       ...data,
       slug,
-      // data.images mein pehle se {url, publicId, alt} maujood hai
     });
 
     return NextResponse.json({ success: true, data: product }, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    console.error("DETAILED_ERROR:", error); // Terminal mein check karein
+
+    // Specific validation error message bhejien
+    return NextResponse.json({
+      success: false,
+      message: error.message,
+      error: error.errors // Yeh aapko batayega kaunsi field missing hai
+    }, { status: 400 }); // Status 400 behtar hai agar data galat ho
   }
 }
 
