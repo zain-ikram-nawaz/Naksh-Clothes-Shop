@@ -103,7 +103,7 @@ export default function FilterSidebar({ categories, filters, onFilterChange }) {
 
       {/* Decorative Brand Text */}
       <div className="pt-4 opacity-10 pointer-events-none">
-        <p className="text-[40px] font-black leading-none uppercase tracking-tighter">Vankea<br/>Essentials</p>
+        <p className="text-[40px] font-black leading-none uppercase tracking-tighter">Naksh<br/>Essentials</p>
       </div>
     </div>
   );

@@ -16,7 +16,7 @@ export default function Footer() {
           {/* Brand - Span 4 columns */}
           <div className="md:col-span-4">
             <Link href="/" className="text-2xl font-black uppercase tracking-[0.2em] mb-6 block">
-              VANKEA<span className="text-zinc-600">.</span>
+              Naksh<span className="text-zinc-600">.</span>
             </Link>
             <p className="text-zinc-500 text-[11px] uppercase tracking-widest leading-relaxed max-w-xs">
               Refining the essentials. <br />
@@ -49,7 +49,7 @@ export default function Footer() {
           <div className="md:col-span-4 md:text-right">
             <h4 className={sectionTitleStyles}>Contact</h4>
             <ul className="space-y-4 text-zinc-500 text-[11px] uppercase tracking-widest">
-              <li className="hover:text-white transition-colors cursor-pointer">it@vankea.com</li>
+              <li className="hover:text-white transition-colors cursor-pointer">it@Naksh.com</li>
               <li>+91 1234567890</li>
               <li className="mt-6 text-zinc-700">Studio: India</li>
             </ul>
@@ -59,7 +59,7 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="border-t border-white/5 mt-20 pt-10 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="text-[9px] font-mono text-zinc-600 tracking-widest uppercase">
-            &copy; {currentYear} VANKEA STUDIO / ALL RIGHTS RESERVED
+            &copy; {currentYear} Naksh STUDIO / ALL RIGHTS RESERVED
           </div>
 
           {/* Social / Extra Links */}

@@ -16,10 +16,7 @@ export default function SignupPage() {
   const [error, setError] = useState('');
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
     setError('');
   };
 
@@ -28,15 +25,8 @@ export default function SignupPage() {
     setLoading(true);
     setError('');
 
-    // Validation
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
-      setLoading(false);
-      return;
-    }
-
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters');
       setLoading(false);
       return;
     }
@@ -44,9 +34,7 @@ export default function SignupPage() {
     try {
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: formData.name,
           email: formData.email,
@@ -57,17 +45,13 @@ export default function SignupPage() {
       const data = await res.json();
 
       if (data.success) {
-        // Save token and user data
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
-
-        // Redirect to home
-        router.push('/');
+        window.location.href = '/';
       } else {
         setError(data.message || 'Signup failed');
       }
     } catch (error) {
-      console.error('Signup error:', error);
       setError('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
@@ -75,30 +59,33 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50 px-4 py-12">
-      <div className="max-w-md w-full">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <Link href="/" className="text-4xl font-bold text-blue-600">
-            Vankea
+    <div className="min-h-screen flex items-center justify-center bg-[#f8fafc] px-4 py-16 font-sans">
+      <div className="max-w-[450px] w-full">
+
+        {/* Editorial Logo Style */}
+        <div className="text-center mb-10">
+          <Link href="/" className="text-3xl font-black uppercase tracking-[0.3em] text-black">
+            Naksh<span className="text-gray-400">.</span>
           </Link>
-          <p className="text-gray-600 mt-2">Create your account</p>
+          <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400 mt-4 font-bold">
+            Create Your Account
+          </p>
         </div>
 
-        {/* Signup Form */}
-        <div className="bg-white rounded-lg shadow-xl p-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">Sign Up</h2>
+        {/* Clean, Compact Signup Form */}
+        <div className="bg-white border border-slate-200 rounded-2xl p-8 md:p-10 shadow-sm">
+          <h2 className="text-xl font-bold text-slate-800 mb-8 tracking-tight">Sign Up</h2>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+            <div className="bg-red-50 text-red-600 text-[11px] font-bold uppercase tracking-widest p-4 rounded-xl mb-6 border border-red-100">
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Name */}
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Full Name */}
             <div>
-              <label className="block text-gray-700 font-semibold mb-2">
+              <label className="block text-[10px] uppercase tracking-[0.15em] font-black text-slate-400 mb-2">
                 Full Name
               </label>
               <input
@@ -107,15 +94,15 @@ export default function SignupPage() {
                 value={formData.name}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-1 focus:ring-black/5 focus:bg-white transition-all text-sm font-medium"
                 placeholder="John Doe"
               />
             </div>
 
             {/* Email */}
             <div>
-              <label className="block text-gray-700 font-semibold mb-2">
-                Email
+              <label className="block text-[10px] uppercase tracking-[0.15em] font-black text-slate-400 mb-2">
+                Email Address
               </label>
               <input
                 type="email"
@@ -123,72 +110,67 @@ export default function SignupPage() {
                 value={formData.email}
                 onChange={handleChange}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="your@email.com"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-1 focus:ring-black/5 focus:bg-white transition-all text-sm font-medium"
+                placeholder="name@example.com"
               />
             </div>
 
-            {/* Password */}
-            <div>
-              <label className="block text-gray-700 font-semibold mb-2">
-                Password
-              </label>
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="••••••••"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Must be at least 6 characters
-              </p>
+            {/* Password Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[10px] uppercase tracking-[0.15em] font-black text-slate-400 mb-2">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-1 focus:ring-black/5 focus:bg-white transition-all text-sm font-medium"
+                  placeholder="••••••••"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] uppercase tracking-[0.15em] font-black text-slate-400 mb-2">
+                  Confirm
+                </label>
+                <input
+                  type="password"
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-1 focus:ring-black/5 focus:bg-white transition-all text-sm font-medium"
+                  placeholder="••••••••"
+                />
+              </div>
             </div>
 
-            {/* Confirm Password */}
-            <div>
-              <label className="block text-gray-700 font-semibold mb-2">
-                Confirm Password
-              </label>
-              <input
-                type="password"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="••••••••"
-              />
-            </div>
-
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-black text-white py-4 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] hover:bg-zinc-800 transition-all duration-300 disabled:opacity-50 mt-4 shadow-lg shadow-black/5"
             >
-              {loading ? 'Creating Account...' : 'Sign Up'}
+              {loading ? 'Processing...' : 'Create Account'}
             </button>
           </form>
 
-          {/* Divider */}
-          <div className="mt-6 text-center">
-            <p className="text-gray-600">
-              Already have an account?{' '}
-              <Link href="/login" className="text-blue-600 hover:underline font-semibold">
-                Login
+          <div className="mt-10 pt-6 border-t border-slate-50 text-center">
+            <p className="text-slate-500 text-xs">
+              Already a member?{' '}
+              <Link href="/login" className="text-black font-black uppercase tracking-tighter hover:underline">
+                Login here
               </Link>
             </p>
           </div>
+        </div>
 
-          {/* Back to Home */}
-          <div className="mt-4 text-center">
-            <Link href="/" className="text-gray-500 hover:text-gray-700 text-sm">
-              ← Back to Home
-            </Link>
-          </div>
+        {/* Minimal Footer Link */}
+        <div className="mt-8 text-center">
+          <Link href="/" className="text-[10px] uppercase tracking-widest font-bold text-slate-400 hover:text-black transition">
+            ← Back to Store
+          </Link>
         </div>
       </div>
     </div>

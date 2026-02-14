@@ -32,7 +32,7 @@ export default async function CategoryPage({ params }) {
   const { category, products } = await getData(resolvedParams.slug);
   if (!category) {
     return (
-      <div className="min-h-screen bg-[#f8fafc] flex flex-col">
+      <div className="min-h-screen bg-[#f8fafc] pt-20 flex flex-col">
         <Navbar />
         <div className="flex-grow flex flex-col items-center justify-center p-6">
           <h1 className="text-2xl font-bold text-slate-800">Category Not Found</h1>

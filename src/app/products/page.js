@@ -59,7 +59,7 @@ export default function ProductsPage() {
   };
 
   return (
-    <div className="bg-[#f8fafc] min-h-screen flex flex-col">
+    <div className="bg-[#f8fafc] min-h-screen pt-20 flex flex-col">
       <Navbar />
 
       <main className="flex-grow container mx-auto px-6 py-10">
@@ -71,21 +71,29 @@ export default function ProductsPage() {
           </div>
 
           {/* Minimal Sort Dropdown */}
-          <div className="flex items-center gap-3 bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
-             <span className="pl-3 text-xs font-bold text-slate-400 uppercase tracking-widest">Sort:</span>
-             <select
+          <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm hover:border-slate-300 transition-all group">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Sort By</span>
+            <div className="relative">
+              <select
                 value={`${filters.sortBy}-${filters.sortOrder}`}
                 onChange={(e) => {
                   const [sortBy, sortOrder] = e.target.value.split('-');
                   handleFilterChange({ sortBy, sortOrder });
                 }}
-                className="bg-transparent border-none text-sm font-semibold text-slate-700 focus:ring-0 cursor-pointer pr-8"
+                className="appearance-none bg-transparent border-none text-xs font-bold text-slate-800 focus:ring-0 cursor-pointer pr-6 py-0 leading-tight uppercase tracking-widest"
               >
                 <option value="createdAt-desc">Newest</option>
                 <option value="price-asc">Price: Low</option>
                 <option value="price-desc">Price: High</option>
                 <option value="name-asc">A to Z</option>
               </select>
+              {/* Custom Arrow Icon */}
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center text-slate-400 group-hover:text-black">
+                <svg className="h-3 w-3 fill-current" viewBox="0 0 20 20">
+                  <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                </svg>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -107,9 +115,9 @@ export default function ProductsPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                 {[...Array(6)].map((_, i) => (
                   <div key={i} className="bg-white border border-slate-100 rounded-2xl h-80 animate-pulse flex flex-col p-4">
-                     <div className="bg-slate-100 rounded-xl h-48 w-full mb-4" />
-                     <div className="h-4 bg-slate-100 rounded w-3/4 mb-2" />
-                     <div className="h-4 bg-slate-100 rounded w-1/2" />
+                    <div className="bg-slate-100 rounded-xl h-48 w-full mb-4" />
+                    <div className="h-4 bg-slate-100 rounded w-3/4 mb-2" />
+                    <div className="h-4 bg-slate-100 rounded w-1/2" />
                   </div>
                 ))}
               </div>
@@ -137,7 +145,7 @@ export default function ProductsPage() {
                 {pagination.pages > 1 && (
                   <div className="flex justify-center items-center gap-3 mt-16">
                     <button
-                      onClick={() => { setPagination(p => ({ ...p, page: p.page - 1 })); window.scrollTo(0,0); }}
+                      onClick={() => { setPagination(p => ({ ...p, page: p.page - 1 })); window.scrollTo(0, 0); }}
                       disabled={pagination.page === 1}
                       className="p-2 w-10 h-10 flex items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 disabled:opacity-30 hover:bg-slate-50 transition-all"
                     >
@@ -148,12 +156,11 @@ export default function ProductsPage() {
                       {[...Array(pagination.pages)].map((_, i) => (
                         <button
                           key={i}
-                          onClick={() => { setPagination(p => ({ ...p, page: i + 1 })); window.scrollTo(0,0); }}
-                          className={`w-10 h-10 rounded-lg text-sm font-bold transition-all ${
-                            pagination.page === i + 1
+                          onClick={() => { setPagination(p => ({ ...p, page: i + 1 })); window.scrollTo(0, 0); }}
+                          className={`w-10 h-10 rounded-lg text-sm font-bold transition-all ${pagination.page === i + 1
                               ? 'bg-white text-blue-600 shadow-sm'
                               : 'text-slate-500 hover:text-slate-800 hover:bg-white/50'
-                          }`}
+                            }`}
                         >
                           {i + 1}
                         </button>
@@ -161,7 +168,7 @@ export default function ProductsPage() {
                     </div>
 
                     <button
-                      onClick={() => { setPagination(p => ({ ...p, page: p.page + 1 })); window.scrollTo(0,0); }}
+                      onClick={() => { setPagination(p => ({ ...p, page: p.page + 1 })); window.scrollTo(0, 0); }}
                       disabled={pagination.page === pagination.pages}
                       className="p-2 w-10 h-10 flex items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 disabled:opacity-30 hover:bg-slate-50 transition-all"
                     >

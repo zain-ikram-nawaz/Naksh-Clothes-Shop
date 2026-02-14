@@ -1,7 +1,7 @@
 import './globals.css';
 
 export const metadata = {
-  title: 'Vankea - Premium T-Shirts',
+  title: 'Naksh - Premium T-Shirts',
   description: 'Shop premium quality t-shirts, polos, and more',
 };
 

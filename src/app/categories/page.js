@@ -23,7 +23,7 @@ export default async function CategoriesPage() {
   const categories = await getCategories();
 
   return (
-    <div className="bg-[#f8fafc] min-h-screen flex flex-col">
+    <div className="bg-[#f8fafc] min-h-screen pt-20 flex flex-col">
       <Navbar />
       <main className="container mx-auto px-6 py-12 flex-grow">
         <div className="mb-10">

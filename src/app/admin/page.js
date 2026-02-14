@@ -1,131 +1,79 @@
 'use client';
-
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState({
-    totalProducts: 0,
-    activeProducts: 0,
-    draftProducts: 0,
-    totalCategories: 0,
-  });
+  const [stats, setStats] = useState({ totalProducts: 0, activeProducts: 0, draftProducts: 0, totalCategories: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const [pRes, cRes] = await Promise.all([
+          fetch('/api/admin/products?limit=1000', { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch('/api/categories')
+        ]);
+        const pData = await pRes.json();
+        const cData = await cRes.json();
+
+        if (pData.success) {
+          setStats({
+            totalProducts: pData.data.length,
+            activeProducts: pData.data.filter(p => p.status === 'active').length,
+            draftProducts: pData.data.filter(p => p.status === 'draft').length,
+            totalCategories: cData.success ? cData.data.length : 0,
+          });
+        }
+      } finally { setLoading(false); }
+    };
     fetchStats();
   }, []);
 
-  const fetchStats = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const productsRes = await fetch('/api/admin/products?limit=1000', {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      const productsData = await productsRes.json();
-      const categoriesRes = await fetch('/api/categories');
-      const categoriesData = await categoriesRes.json();
-
-      if (productsData.success) {
-        const products = productsData.data;
-        setStats({
-          totalProducts: products.length,
-          activeProducts: products.filter(p => p.status === 'active').length,
-          draftProducts: products.filter(p => p.status === 'draft').length,
-          totalCategories: categoriesData.success ? categoriesData.data.length : 0,
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const statCards = [
-    { title: 'Inventory Total', value: stats.totalProducts, label: 'Units', link: '/admin/products' },
-    { title: 'Market Active', value: stats.activeProducts, label: 'Live', link: '/admin/products' },
-    { title: 'Draft Queue', value: stats.draftProducts, label: 'Pending', link: '/admin/products' },
-    { title: 'Collections', value: stats.totalCategories, label: 'Categories', link: '/admin/categories' },
-  ];
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="w-8 h-8 border-2 border-black border-t-transparent animate-spin"></div>
-      </div>
-    );
-  }
+  if (loading) return <div className="h-96 flex items-center justify-center"><div className="w-4 h-4 border-2 border-black border-t-transparent animate-spin"></div></div>;
 
   return (
-    <div className="space-y-12">
-      {/* Header Section */}
-      <div className="flex flex-col gap-2">
-        <h1 className="text-4xl font-black uppercase tracking-tighter italic">Overview</h1>
-        <p className="text-[10px] uppercase tracking-[0.3em] text-gray-400 font-bold">Studio Performance Metrics</p>
+    <div className="space-y-16 px-4">
+      <div className="flex flex-col gap-3">
+        <h1 className="text-5xl font-black uppercase tracking-tighter italic">Studio View</h1>
+        <p className="text-[10px] uppercase tracking-[0.4em] text-gray-400 font-bold">Metrics & System Integrity</p>
       </div>
 
-      {/* Stats Grid - Minimalist Data Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCards.map((stat, index) => (
-          <Link key={index} href={stat.link} className="group">
-            <div className="bg-white border border-black/5 p-8 transition-all duration-300 group-hover:border-black group-hover:shadow-sm">
-              <h3 className="text-[10px] uppercase tracking-[0.2em] font-black text-gray-400 mb-6 group-hover:text-black transition-colors">
-                {stat.title}
-              </h3>
-              <div className="flex items-baseline gap-2">
-                <p className="text-4xl font-black tracking-tighter">{stat.value}</p>
-                <span className="text-[9px] uppercase font-mono text-gray-300">{stat.label}</span>
-              </div>
-            </div>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-px bg-black/5 border border-black/5">
+        {[
+          { label: 'Total units', val: stats.totalProducts, link: '/admin/products' },
+          { label: 'Market Live', val: stats.activeProducts, link: '/admin/products' },
+          { label: 'Drafts', val: stats.draftProducts, link: '/admin/products' },
+          { label: 'Collections', val: stats.totalCategories, link: '/admin/categories' }
+        ].map((s, i) => (
+          <Link key={i} href={s.link} className="bg-white p-10 hover:bg-[#fafafa] transition-colors group">
+            <p className="text-[9px] uppercase tracking-[0.3em] font-black text-gray-400 mb-8 group-hover:text-black transition-colors">{s.label}</p>
+            <p className="text-5xl font-black tracking-tighter">{s.val}</p>
           </Link>
         ))}
       </div>
 
-      {/* Action Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-white border border-black/5 p-10">
-          <h2 className="text-xs uppercase tracking-[0.4em] font-black mb-10 border-b border-black/5 pb-4">
-            System Control
-          </h2>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+        <div className="lg:col-span-2 space-y-6">
+          <h2 className="text-[10px] uppercase tracking-[0.5em] font-black border-b border-black pb-4">Quick Commands</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Link
-              href="/admin/products/add"
-              className="group flex flex-col justify-center border border-black p-6 hover:bg-black transition-all duration-500"
-            >
-              <span className="text-[10px] uppercase tracking-widest text-gray-400 group-hover:text-gray-500 mb-1">Action 01</span>
-              <span className="text-sm font-black uppercase tracking-widest group-hover:text-white">Create Product</span>
+            <Link href="/admin/products/add" className="p-8 border border-black flex justify-between items-center group hover:bg-black hover:text-white transition-all duration-500">
+              <span className="text-xs font-black uppercase tracking-[0.2em]">Add New Item</span>
+              <span className="text-xl group-hover:translate-x-2 transition-transform">→</span>
             </Link>
-            <Link
-              href="/admin/products"
-              className="group flex flex-col justify-center border border-black/10 p-6 hover:border-black transition-all duration-500"
-            >
-              <span className="text-[10px] uppercase tracking-widest text-gray-400 mb-1">Action 02</span>
-              <span className="text-sm font-black uppercase tracking-widest">Database Audit</span>
+            <Link href="/admin/products" className="p-8 border border-black/10 flex justify-between items-center group hover:border-black transition-all">
+              <span className="text-xs font-black uppercase tracking-[0.2em]">Audit Catalog</span>
+              <span className="text-xl group-hover:translate-x-2 transition-transform">→</span>
             </Link>
           </div>
         </div>
-
-        {/* Studio Status Sidebar in Dashboard */}
-        <div className="bg-black text-white p-10 flex flex-col justify-between">
-          <div>
-            <h3 className="text-[10px] uppercase tracking-[0.4em] font-black mb-6 opacity-50">System Status</h3>
-            <div className="space-y-6">
-               <div className="flex justify-between items-center border-b border-white/10 pb-4">
-                  <span className="text-[10px] uppercase tracking-widest">API Latency</span>
-                  <span className="text-[10px] font-mono text-green-500">Normal</span>
-               </div>
-               <div className="flex justify-between items-center border-b border-white/10 pb-4">
-                  <span className="text-[10px] uppercase tracking-widest">Database</span>
-                  <span className="text-[10px] font-mono text-green-500">Synced</span>
-               </div>
-            </div>
+        <div className="bg-black p-10 text-white flex flex-col justify-between aspect-square lg:aspect-auto">
+          <p className="text-[9px] uppercase tracking-[0.4em] opacity-40">Operational Status</p>
+          <div className="space-y-4">
+            <div className="flex justify-between text-[10px] uppercase tracking-widest border-b border-white/10 pb-2"><span>Network</span><span className="text-emerald-400">Stable</span></div>
+            <div className="flex justify-between text-[10px] uppercase tracking-widest border-b border-white/10 pb-2"><span>Sync</span><span className="text-emerald-400">Online</span></div>
           </div>
-          <div className="mt-12">
-            <p className="text-[8px] uppercase tracking-[0.2em] leading-relaxed opacity-30">
-              Vankea Studio Admin <br /> Build v2.0.4-stable
-            </p>
-          </div>
+          <p className="text-[8px] opacity-20 uppercase tracking-widest">Naksh Admin v2.0</p>
         </div>
       </div>
     </div>

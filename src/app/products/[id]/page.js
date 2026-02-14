@@ -31,7 +31,7 @@ export async function generateMetadata({ params }) {
   const product = await getProduct(id);
   if (!product) return { title: 'Product Not Found' };
   return {
-    title: `${product.name} — Vankea Studio`,
+    title: `${product.name} — Naksh Studio`,
     description: product.shortDescription || product.description,
   };
 }
@@ -57,7 +57,7 @@ export default async function ProductDetailPage({ params }) {
     <div className="bg-[#f8fafc] min-h-screen">
       <Navbar />
 
-      <main className="container mx-auto px-6 py-12">
+      <main className="container mx-auto pt-20 px-6 py-12">
         {/* Minimal Breadcrumb */}
         <nav className="text-[10px] uppercase tracking-[0.2em] font-bold text-slate-400 mb-10 flex gap-2">
           <Link href="/" className="hover:text-black">Home</Link>
@@ -79,7 +79,7 @@ export default async function ProductDetailPage({ params }) {
           <div className="lg:col-span-5 space-y-10">
             <section>
               <span className="text-[10px] uppercase tracking-[0.3em] font-black text-blue-600 mb-2 block">
-                {product.brand || 'Vankea Original'}
+                {product.brand || 'Naksh Original'}
               </span>
               <h1 className="text-5xl font-black uppercase tracking-tighter leading-none text-slate-900 mb-6">
                 {product.name}

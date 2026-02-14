@@ -11,19 +11,31 @@ export default function Navbar() {
   const pathname = usePathname();
 
   useEffect(() => {
+    // Auth Check
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
     if (token && userData) {
       setUser(JSON.parse(userData));
     }
 
+    // Scroll Handler
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
     };
 
+    // Prevent body scroll when menu is open
+    if (isMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMenuOpen]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -40,110 +52,84 @@ export default function Navbar() {
 
   return (
     <nav
-      className={`sticky top-0 z-50 transition-all duration-500 ${
-        isScrolled ? 'bg-white/80 backdrop-blur-md border-b border-black/5' : 'bg-white'
+      className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 ${
+        isScrolled || isMenuOpen ? 'bg-white border-b border-black/5' : 'bg-white md:bg-transparent'
       }`}
     >
       <div className="container mx-auto px-6">
         <div className="flex items-center justify-between h-20">
 
-          {/* Logo - Bold & Editorial */}
-          <Link href="/" className="text-xl font-black uppercase tracking-[0.2em] hover:opacity-70 transition">
-            VANKEA<span className="text-gray-400">.</span>
+          {/* Logo */}
+          <Link href="/" className="relative z-[110] text-xl font-black uppercase tracking-[0.2em]">
+            Naksh<span className="text-gray-400">.</span>
           </Link>
 
-          {/* Desktop Navigation - Minimalist spacing */}
+          {/* Desktop Nav */}
           <div className="hidden md:flex items-center space-x-10">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`text-[11px] uppercase tracking-[0.2em] font-bold transition-all duration-300 relative group ${
+                className={`text-[11px] uppercase tracking-[0.2em] font-bold transition-all relative group ${
                   pathname === link.href ? 'text-black' : 'text-gray-400 hover:text-black'
                 }`}
               >
                 {link.label}
-                <span className={`absolute -bottom-1 left-0 w-0 h-[1.5px] bg-black transition-all duration-300 group-hover:w-full ${pathname === link.href ? 'w-full' : ''}`}></span>
+                <span className={`absolute -bottom-1 left-0 h-[1.5px] bg-black transition-all duration-300 ${pathname === link.href ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
               </Link>
             ))}
           </div>
 
-          {/* Right Side - Auth & Admin */}
+          {/* Right Side */}
           <div className="hidden md:flex items-center space-x-6">
             {user ? (
               <div className="flex items-center gap-6">
-                <span className="text-[10px] uppercase tracking-widest font-mono text-gray-500 italic">
-                   {user.name}
-                </span>
-                {user.role === 'admin' && (
-                  <Link
-                    href="/admin"
-                    className="border border-black px-5 py-2 text-[10px] uppercase font-bold tracking-widest hover:bg-black hover:text-white transition-all duration-300"
-                  >
-                    Admin
-                  </Link>
-                )}
-                <button
-                  onClick={handleLogout}
-                  className="text-[10px] uppercase font-bold tracking-widest text-gray-400 hover:text-red-500 transition"
-                >
-                  Logout
-                </button>
+                <span className="text-[10px] uppercase font-mono text-gray-500">{user.name}</span>
+                <button onClick={handleLogout} className="text-[10px] uppercase font-bold text-red-500">Logout</button>
               </div>
             ) : (
-              <div className="flex items-center gap-8">
-                <Link
-                  href="/login"
-                  className="text-[11px] uppercase tracking-widest font-bold text-gray-400 hover:text-black transition"
-                >
-                  Login
-                </Link>
-                <Link
-                  href="/signup"
-                  className="bg-black text-white px-6 py-2.5 text-[11px] uppercase font-bold tracking-widest hover:bg-zinc-800 transition-all duration-300"
-                >
-                  Join
-                </Link>
-              </div>
+              <Link href="/login" className="text-[11px] font-bold uppercase">Login</Link>
             )}
           </div>
 
-          {/* Mobile Menu Button */}
+          {/* Mobile Toggle - Higher Z-Index */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden p-2 text-black"
+            className="md:hidden relative z-[110] p-2"
+            aria-label="Toggle Menu"
           >
             <div className="w-6 flex flex-col items-end gap-1.5">
-              <span className={`h-[1.5px] bg-black transition-all ${isMenuOpen ? 'w-6 rotate-45 translate-y-2' : 'w-6'}`}></span>
-              <span className={`h-[1.5px] bg-black transition-all ${isMenuOpen ? 'opacity-0' : 'w-4'}`}></span>
-              <span className={`h-[1.5px] bg-black transition-all ${isMenuOpen ? 'w-6 -rotate-45 -translate-y-1' : 'w-5'}`}></span>
+              <span className={`h-[1.5px] bg-black transition-all duration-300 ${isMenuOpen ? 'w-6 rotate-45 translate-y-2' : 'w-6'}`}></span>
+              <span className={`h-[1.5px] bg-black transition-all duration-300 ${isMenuOpen ? 'opacity-0' : 'w-4'}`}></span>
+              <span className={`h-[1.5px] bg-black transition-all duration-300 ${isMenuOpen ? 'w-6 -rotate-45 -translate-y-1' : 'w-5'}`}></span>
             </div>
           </button>
         </div>
+      </div>
 
-        {/* Mobile Menu - Full Screen Slide */}
-        <div className={`fixed inset-0 bg-white z-40 transition-transform duration-500 md:hidden ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'}`} style={{ top: '80px' }}>
-          <div className="flex flex-col p-8 space-y-8">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setIsMenuOpen(false)}
-                className="text-4xl font-black uppercase tracking-tighter hover:text-gray-500"
-              >
-                {link.label}
-              </Link>
-            ))}
-            <div className="h-[1px] bg-black/5 my-4"></div>
-            {!user ? (
-               <>
-                <Link href="/login" onClick={() => setIsMenuOpen(false)} className="text-xl font-bold uppercase tracking-widest">Login</Link>
-                <Link href="/signup" onClick={() => setIsMenuOpen(false)} className="text-xl font-bold uppercase tracking-widest text-zinc-400">Sign Up</Link>
-               </>
-            ) : (
-              <button onClick={handleLogout} className="text-left text-xl font-bold uppercase tracking-widest text-red-500">Logout</button>
-            )}
-          </div>
+      {/* Mobile Menu Overlay - Full Screen Fix */}
+      <div
+        className={`fixed inset-0 bg-white z-[105] transition-transform duration-500 ease-in-out md:hidden ${
+          isMenuOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        <div className="flex flex-col justify-center h-full p-8 space-y-8">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              onClick={() => setIsMenuOpen(false)}
+              className="text-5xl font-black uppercase tracking-tighter"
+            >
+              {link.label}
+            </Link>
+          ))}
+          <div className="h-[1px] bg-black/10 my-4 w-12"></div>
+          {!user ? (
+            <Link href="/login" onClick={() => setIsMenuOpen(false)} className="text-xl font-bold uppercase tracking-widest">Login</Link>
+          ) : (
+            <button onClick={handleLogout} className="text-left text-xl font-bold uppercase text-red-500">Logout</button>
+          )}
         </div>
       </div>
     </nav>

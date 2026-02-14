@@ -38,13 +38,13 @@ export default async function HomePage() {
       <Navbar />
 
       {/* --- HERO SECTION: Modern Editorial Look --- */}
-      <section className="bg-white pt-16 pb-24 border-b border-black/5">
-        <div className="container mx-auto px-4 text-center">
+      <section className="bg-white pt-16 pb-24  border-b border-black/5">
+        <div className="container mx-auto px-4 mt-10 text-center">
           <div className="inline-block px-3 py-1 border border-black text-[10px] uppercase tracking-[0.3em] font-bold mb-8">
             Est. 2026
           </div>
           <h1 className="text-7xl md:text-9xl font-black uppercase tracking-tighter leading-[0.8] mb-10">
-            Vankea <br />
+            Naksh <br />
             <span className="text-outline-black text-transparent">Studio</span>
           </h1>
           <p className="max-w-xl mx-auto text-gray-500 text-sm md:text-base font-medium leading-relaxed mb-12">

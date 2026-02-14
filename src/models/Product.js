@@ -123,7 +123,7 @@ const ProductSchema = new mongoose.Schema({
 
   brand: {
     type: String,
-    default: 'Vankea',
+    default: 'Naksh',
   },
   madeIn: {
     type: String,
