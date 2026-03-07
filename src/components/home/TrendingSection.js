@@ -87,9 +87,9 @@ function TrendingFeaturedCard({ product }) {
               {product.name}
             </h3>
             <div className="flex items-center gap-3">
-              <span className="text-2xl font-black text-white">₹{product.price}</span>
+              <span className="text-2xl font-black text-white">Rs {product.price}</span>
               {product.comparePrice && (
-                <span className="text-lg text-white/60 line-through">₹{product.comparePrice}</span>
+                <span className="text-lg text-white/60 line-through">Rs {product.comparePrice}</span>
               )}
             </div>
           </div>
@@ -123,7 +123,7 @@ function TrendingSmallCard({ product }) {
           <h4 className="text-xs font-bold uppercase tracking-tight text-text mb-1 line-clamp-1">
             {product.name}
           </h4>
-          <span className="text-sm font-black text-text">₹{product.price}</span>
+          <span className="text-sm font-black text-text">Rs {product.price}</span>
         </div>
       </div>
     </Link>

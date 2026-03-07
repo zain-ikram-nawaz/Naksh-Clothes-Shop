@@ -74,11 +74,11 @@ export default function ProductCard({ product }) {
           {/* Price */}
           <div className="flex items-center gap-3">
             <span className="text-sm font-black text-text">
-              ₹{product.price}
+              Rs {product.price}
             </span>
             {product.comparePrice && (
               <span className="text-xs text-text opacity-40 line-through font-light">
-                ₹{product.comparePrice}
+                Rs {product.comparePrice}
               </span>
             )}
           </div>

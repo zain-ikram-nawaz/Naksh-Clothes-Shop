@@ -97,9 +97,9 @@ function CollectionCard({ product }) {
           </h3>
 
           <div className="flex items-center gap-3">
-            <span className="text-lg font-black text-text">₹{product.price}</span>
+            <span className="text-lg font-black text-text">Rs {product.price}</span>
             {product.comparePrice && (
-              <span className="text-sm text-text opacity-40 line-through">₹{product.comparePrice}</span>
+              <span className="text-sm text-text opacity-40 line-through">Rs {product.comparePrice}</span>
             )}
           </div>
 

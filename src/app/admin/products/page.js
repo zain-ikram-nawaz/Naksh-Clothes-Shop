@@ -63,7 +63,7 @@ export default function AdminProductsPage() {
                   </div>
                 </td>
                 <td className="p-6 hidden md:table-cell">
-                  <span className="text-sm font-bold">₹{p.price}</span>
+                  <span className="text-sm font-bold">Rs {p.price}</span>
                 </td>
                 <td className="p-6 hidden lg:table-cell">
                   <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 border ${p.status === 'active' ? 'border-emerald-500 text-emerald-600' : 'border-gray-200 text-gray-400'}`}>

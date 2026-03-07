@@ -213,9 +213,9 @@ export default async function HomePage() {
                         {trendingProducts[0].name}
                       </h3>
                       <div className="flex items-center gap-3">
-                        <span className="text-2xl font-black text-white">₹{trendingProducts[0].price}</span>
+                        <span className="text-2xl font-black text-white">Rs {trendingProducts[0].price}</span>
                         {trendingProducts[0].comparePrice && (
-                          <span className="text-lg text-white/60 line-through">₹{trendingProducts[0].comparePrice}</span>
+                          <span className="text-lg text-white/60 line-through">Rs {trendingProducts[0].comparePrice}</span>
                         )}
                       </div>
 
@@ -280,9 +280,9 @@ export default async function HomePage() {
                         {product.name}
                       </h4>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-black text-text">₹{product.price}</span>
+                        <span className="text-sm font-black text-text">Rs {product.price}</span>
                         {product.comparePrice && (
-                          <span className="text-xs text-text opacity-40 line-through">₹{product.comparePrice}</span>
+                          <span className="text-xs text-text opacity-40 line-through">Rs {product.comparePrice}</span>
                         )}
                       </div>
                     </div>

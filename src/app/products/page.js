@@ -223,7 +223,7 @@ export default function ProductsPage() {
 
             {(filters.minPrice || filters.maxPrice) && (
               <span className="bg-card-bg border border-accent-dim px-3 py-1 rounded-sm text-xs font-bold text-text flex items-center gap-2">
-                Price: ₹{filters.minPrice || '0'} - ₹{filters.maxPrice || '∞'}
+                Price: Rs {filters.minPrice || '0'} - Rs {filters.maxPrice || '∞'}
                 <button onClick={() => handleFilterChange({ minPrice: '', maxPrice: '' })} className="text-text opacity-60 hover:opacity-100">×</button>
               </span>
             )}

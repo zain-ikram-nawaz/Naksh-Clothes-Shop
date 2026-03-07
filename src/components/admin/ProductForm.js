@@ -506,7 +506,7 @@ const handleImageUpload = async (e) => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Price (₹) <span className="text-red-500">*</span>
+                    Price (Rs ) <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="number"
@@ -522,7 +522,7 @@ const handleImageUpload = async (e) => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Compare at Price (₹)
+                    Compare at Price (Rs )
                   </label>
                   <input
                     type="number"
@@ -560,7 +560,7 @@ const handleImageUpload = async (e) => {
               {formData.onSale && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Sale Price (₹)
+                    Sale Price (Rs )
                   </label>
                   <input
                     type="number"

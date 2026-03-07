@@ -96,9 +96,9 @@ export default async function ProductDetailPage({ params }) {
               )}
 
               <div className="flex items-baseline gap-4">
-                <span className="text-4xl font-black text-text tracking-tighter">₹{product.price}</span>
+                <span className="text-4xl font-black text-text tracking-tighter">Rs {product.price}</span>
                 {product.comparePrice && (
-                  <span className="text-xl text-text opacity-40 line-through font-medium">₹{product.comparePrice}</span>
+                  <span className="text-xl text-text opacity-40 line-through font-medium">Rs {product.comparePrice}</span>
                 )}
                 {discountPercentage > 0 && (
                   <span className="text-[10px] font-black bg-red-50 text-red-500 px-2 py-1 uppercase rounded-sm">-{discountPercentage}%</span>

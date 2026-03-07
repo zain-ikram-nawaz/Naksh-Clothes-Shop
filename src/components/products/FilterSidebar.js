@@ -118,7 +118,7 @@ export default function FilterSidebar({ categories, filters, onFilterChange }) {
 
       {/* Price Range */}
       <div>
-        <label className={labelStyles}>Price Range (₹)</label>
+        <label className={labelStyles}>Price Range (Rs )</label>
         <div className="flex gap-2">
           <input
             type="number"
