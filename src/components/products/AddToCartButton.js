@@ -31,16 +31,16 @@ export default function AddToCartButton({ product }) {
     alert('ADDED TO BAG');
   };
 
-  const labelStyles = "text-[10px] uppercase tracking-[0.2em] font-black text-gray-400 mb-4 block";
+  const labelStyles = "text-[10px] uppercase tracking-[0.2em] font-black text-text opacity-60 mb-4 block";
 
   return (
-    <div className="space-y-10 py-6">
+    <div className="space-y-10 py-6 font-sans">
       {/* Size Selection */}
       {product.sizes && product.sizes.length > 0 && (
         <div>
           <div className="flex justify-between items-center mb-4">
             <label className={labelStyles}>Select Size</label>
-            <button className="text-[9px] uppercase tracking-widest underline underline-offset-4 opacity-50 hover:opacity-100">Size Guide</button>
+            <button className="text-[9px] uppercase tracking-widest underline underline-offset-4 opacity-50 hover:opacity-100 text-text">Size Guide</button>
           </div>
           <div className="flex flex-wrap gap-2">
             {product.sizes.map((sizeObj, index) => (
@@ -48,12 +48,12 @@ export default function AddToCartButton({ product }) {
                 key={index}
                 onClick={() => setSelectedSize(sizeObj.size)}
                 disabled={sizeObj.stock === 0}
-                className={`min-w-[60px] h-[45px] text-[11px] font-bold uppercase tracking-widest border transition-all duration-300 ${
+                className={`min-w-[60px] h-[45px] text-[11px] font-bold uppercase tracking-widest border transition-all duration-300 rounded-sm ${
                   selectedSize === sizeObj.size
-                    ? 'border-black bg-black text-white'
+                    ? 'border-text bg-text text-card-bg'
                     : sizeObj.stock > 0
-                    ? 'border-black/10 hover:border-black'
-                    : 'border-black/5 bg-gray-50 text-gray-300 cursor-not-allowed line-through'
+                    ? 'border-accent-dim hover:border-text bg-card-bg text-text'
+                    : 'border-accent-dim bg-main-bg text-text opacity-30 cursor-not-allowed line-through'
                 }`}
               >
                 {sizeObj.size}
@@ -72,15 +72,15 @@ export default function AddToCartButton({ product }) {
               <button
                 key={index}
                 onClick={() => setSelectedColor(color.name)}
-                className={`group relative p-1 border transition-all duration-300 ${
-                  selectedColor === color.name ? 'border-black' : 'border-transparent'
+                className={`group relative p-1 border transition-all duration-300 rounded-sm ${
+                  selectedColor === color.name ? 'border-text' : 'border-transparent'
                 }`}
               >
                 <div
-                  className="w-8 h-8 border border-black/5"
+                  className="w-8 h-8 border border-accent-dim rounded-sm"
                   style={{ backgroundColor: color.hexCode }}
                 ></div>
-                <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[8px] uppercase font-bold tracking-tighter opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[8px] uppercase font-bold tracking-tighter opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap text-text">
                   {color.name}
                 </span>
               </button>
@@ -89,21 +89,21 @@ export default function AddToCartButton({ product }) {
         </div>
       )}
 
-      {/* Quantity & Add to Cart Row */}
+      {/* Quantity & Add to Cart */}
       <div className="flex flex-col gap-4 pt-4">
         <label className={labelStyles}>Quantity</label>
         <div className="flex gap-4">
-          <div className="flex items-center border border-black/10 h-[55px]">
+          <div className="flex items-center border border-accent-dim h-[55px] bg-card-bg rounded-sm">
             <button
               onClick={() => setQuantity(Math.max(1, quantity - 1))}
-              className="w-12 h-full hover:bg-gray-50 transition-colors text-lg"
+              className="w-12 h-full hover:bg-main-bg transition-colors text-lg text-text"
             >
               —
             </button>
-            <span className="w-12 text-center text-xs font-black font-mono leading-none">{quantity}</span>
+            <span className="w-12 text-center text-xs font-black font-mono leading-none text-text">{quantity}</span>
             <button
               onClick={() => setQuantity(quantity + 1)}
-              className="w-12 h-full hover:bg-gray-50 transition-colors text-lg"
+              className="w-12 h-full hover:bg-main-bg transition-colors text-lg text-text"
             >
               +
             </button>
@@ -111,15 +111,15 @@ export default function AddToCartButton({ product }) {
 
           <button
             onClick={handleAddToCart}
-            className="flex-grow bg-black text-white h-[55px] text-[11px] uppercase font-black tracking-[0.3em] hover:bg-zinc-800 transition-all active:scale-[0.98]"
+            className="flex-grow bg-text text-card-bg h-[55px] text-[11px] uppercase font-black tracking-[0.3em] hover:opacity-80 transition-all active:scale-[0.98] rounded-sm"
           >
             Add to Bag
           </button>
         </div>
       </div>
 
-      {/* Product Origin / Shipping Note */}
-      <p className="text-[9px] text-gray-400 uppercase tracking-widest font-medium">
+      {/* Shipping Note */}
+      <p className="text-[9px] text-text opacity-60 uppercase tracking-widest font-medium">
         Standard Shipping: 2-4 Business Days <br />
         Free returns on all studio essentials.
       </p>

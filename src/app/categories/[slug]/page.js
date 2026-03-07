@@ -30,13 +30,14 @@ async function getData(slug) {
 export default async function CategoryPage({ params }) {
  const resolvedParams = await params;
   const { category, products } = await getData(resolvedParams.slug);
+
   if (!category) {
     return (
-      <div className="min-h-screen bg-[#f8fafc] pt-20 flex flex-col">
+      <div className="min-h-screen bg-main-bg pt-20 flex flex-col font-sans">
         <Navbar />
         <div className="flex-grow flex flex-col items-center justify-center p-6">
-          <h1 className="text-2xl font-bold text-slate-800">Category Not Found</h1>
-          <Link href="/categories" className="mt-4 text-blue-600 font-medium hover:underline">← Back to all categories</Link>
+          <h1 className="text-2xl font-bold text-text">Category Not Found</h1>
+          <Link href="/categories" className="mt-4 text-text font-medium hover:underline">← Back to all categories</Link>
         </div>
         <Footer />
       </div>
@@ -44,26 +45,26 @@ export default async function CategoryPage({ params }) {
   }
 
   return (
-    <div className="bg-[#f8fafc] min-h-screen flex flex-col">
+    <div className="bg-main-bg min-h-screen pt-20 flex flex-col font-sans">
       <Navbar />
       <div className="container mx-auto px-6 py-10 flex-grow">
         {/* Breadcrumb */}
-        <nav className="flex text-xs font-medium text-slate-400 uppercase tracking-widest mb-8">
-          <Link href="/" className="hover:text-blue-600">Home</Link>
+        <nav className="flex text-xs font-medium text-text opacity-60 uppercase tracking-widest mb-8">
+          <Link href="/" className="hover:opacity-100">Home</Link>
           <span className="mx-3">/</span>
-          <Link href="/categories" className="hover:text-blue-600">Categories</Link>
+          <Link href="/categories" className="hover:opacity-100">Categories</Link>
           <span className="mx-3">/</span>
-          <span className="text-slate-800">{category.name}</span>
+          <span className="text-text opacity-100">{category.name}</span>
         </nav>
 
         <header className="mb-12">
-          <h1 className="text-4xl font-extrabold text-slate-900 mb-4">{category.name}</h1>
-          {category.description && <p className="text-slate-500 max-w-2xl text-lg">{category.description}</p>}
+          <h1 className="text-4xl font-extrabold text-text mb-4">{category.name}</h1>
+          {category.description && <p className="text-text opacity-60 max-w-2xl text-lg">{category.description}</p>}
         </header>
 
         {products.length === 0 ? (
-          <div className="bg-white border border-slate-200 rounded-3xl p-20 text-center shadow-sm">
-            <p className="text-slate-400 text-lg">No products available in this category yet.</p>
+          <div className="bg-card-bg border border-accent-dim rounded-lg p-20 text-center shadow-soft">
+            <p className="text-text opacity-60 text-lg">No products available in this category yet.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">

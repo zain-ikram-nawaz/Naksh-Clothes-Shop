@@ -8,8 +8,8 @@ export default function ProductGallery({ images, productName }) {
 
   if (!images || images.length === 0) {
     return (
-      <div className="w-full aspect-[3/4] bg-[#f9f9f9] border border-black/5 flex items-center justify-center">
-        <span className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">
+      <div className="w-full aspect-[3/4] bg-main-bg border border-accent-dim rounded-md flex items-center justify-center">
+        <span className="text-[10px] uppercase tracking-widest text-text opacity-60 font-bold">
           No Visuals Available
         </span>
       </div>
@@ -17,19 +17,19 @@ export default function ProductGallery({ images, productName }) {
   }
 
   return (
-    <div className="flex flex-col md:flex-row gap-4">
+    <div className="flex flex-col md:flex-row gap-4 font-sans">
 
-      {/* Thumbnails - Sidebar style on Desktop */}
+      {/* Thumbnails */}
       {images.length > 1 && (
         <div className="order-2 md:order-1 flex md:flex-col gap-3 w-full md:w-20">
           {images.map((image, index) => (
             <button
               key={index}
               onClick={() => setSelectedImage(index)}
-              className={`relative aspect-[3/4] md:w-20 overflow-hidden transition-all duration-300 border ${
+              className={`relative aspect-[3/4] md:w-20 overflow-hidden transition-all duration-300 border rounded-sm ${
                 selectedImage === index
-                  ? 'border-black opacity-100'
-                  : 'border-transparent opacity-40 hover:opacity-80 hover:border-black/20'
+                  ? 'border-text opacity-100'
+                  : 'border-transparent opacity-40 hover:opacity-80 hover:border-accent-dim'
               }`}
             >
               <Image
@@ -44,19 +44,19 @@ export default function ProductGallery({ images, productName }) {
         </div>
       )}
 
-      {/* Main Image - Large & Sharp */}
-      <div className="order-1 md:order-2 flex-grow relative aspect-[3/4] bg-[#f9f9f9] border border-black/5 group cursor-zoom-in">
+      {/* Main Image */}
+      <div className="order-1 md:order-2 flex-grow relative aspect-[3/4] bg-main-bg border border-accent-dim rounded-md group cursor-zoom-in">
         <Image
           src={images[selectedImage].url}
           alt={images[selectedImage].alt || productName}
           fill
-          className="object-cover transition-all duration-700"
+          className="object-cover transition-all duration-700 rounded-md"
           priority
           sizes="(max-width: 768px) 100vw, 50vw"
         />
 
-        {/* Subtle Image Count Badge */}
-        <div className="absolute bottom-6 right-6 bg-black text-white text-[9px] font-mono px-2 py-1 tracking-widest uppercase">
+        {/* Image Count Badge */}
+        <div className="absolute bottom-6 right-6 bg-text text-card-bg text-[9px] font-mono px-2 py-1 tracking-widest uppercase rounded-sm">
           {selectedImage + 1} / {images.length}
         </div>
       </div>

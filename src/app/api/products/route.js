@@ -2,69 +2,111 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Product from '@/models/Product';
 
-// --- FIX: Build error ke liye ye line sabse zaroori hai ---
 export const dynamic = 'force-dynamic';
 
 export async function GET(request) {
   try {
     await connectDB();
 
-    // URL parameters extract karna (Dynamic behavior)
     const { searchParams } = new URL(request.url);
 
-    // Pagination logic
+    // Pagination
     const page = parseInt(searchParams.get('page')) || 1;
     const limit = parseInt(searchParams.get('limit')) || 12;
     const skip = (page - 1) * limit;
 
-    // Filters logic
-    const category = searchParams.get('category');
-    const productType = searchParams.get('type');
-    const minPrice = searchParams.get('minPrice');
-    const maxPrice = searchParams.get('maxPrice');
-    const color = searchParams.get('color');
-    const size = searchParams.get('size');
-    const search = searchParams.get('search');
-    const featured = searchParams.get('featured');
-    const trending = searchParams.get('trending');
+    // Build filter object
+    const filter = { status: 'active' };
 
-    // Sort logic
-    const sortBy = searchParams.get('sortBy') || 'createdAt';
-    const sortOrder = searchParams.get('sortOrder') === 'asc' ? 1 : -1;
-
-    // Build query object
-    let query = { status: 'active' };
-
-    if (category) query.category = category;
-    if (productType) query.productType = productType;
-    if (color) query['colors.name'] = new RegExp(color, 'i');
-    if (size) query['sizes.size'] = size;
-    if (featured === 'true') query.featured = true;
-    if (trending === 'true') query.trending = true;
-
-    if (minPrice || maxPrice) {
-      query.price = {};
-      if (minPrice) query.price.$gte = parseFloat(minPrice);
-      if (maxPrice) query.price.$lte = parseFloat(maxPrice);
+    // Category filter
+    if (searchParams.get('category')) {
+      filter.category = searchParams.get('category');
     }
 
-    if (search) {
-      query.$or = [
-        { name: new RegExp(search, 'i') },
-        { description: new RegExp(search, 'i') },
-        { brand: new RegExp(search, 'i') },
+    // Product type filter
+    if (searchParams.get('type')) {
+      filter.productType = searchParams.get('type');
+    }
+
+    // Fit filter
+    if (searchParams.get('fit')) {
+      filter.fit = searchParams.get('fit');
+    }
+
+    // Pattern filter
+    if (searchParams.get('pattern')) {
+      filter.pattern = searchParams.get('pattern');
+    }
+
+    // Fabric type filter
+    if (searchParams.get('fabric')) {
+      filter.fabricType = searchParams.get('fabric');
+    }
+
+    // Price range filter
+    if (searchParams.get('minPrice') || searchParams.get('maxPrice')) {
+      filter.price = {};
+      if (searchParams.get('minPrice')) {
+        filter.price.$gte = parseFloat(searchParams.get('minPrice'));
+      }
+      if (searchParams.get('maxPrice')) {
+        filter.price.$lte = parseFloat(searchParams.get('maxPrice'));
+      }
+    }
+
+    // Special filters
+    if (searchParams.get('featured') === 'true') {
+      filter.featured = true;
+    }
+
+    if (searchParams.get('trending') === 'true') {
+      filter.trending = true;
+    }
+
+    if (searchParams.get('onSale') === 'true') {
+      filter.onSale = true;
+    }
+
+    // Rating filter
+    if (searchParams.get('minRating')) {
+      filter.rating = { $gte: parseFloat(searchParams.get('minRating')) };
+    }
+
+    // Search filter
+    if (searchParams.get('search')) {
+      const searchTerm = searchParams.get('search');
+      filter.$or = [
+        { name: { $regex: searchTerm, $options: 'i' } },
+        { description: { $regex: searchTerm, $options: 'i' } },
+        { keywords: { $in: [new RegExp(searchTerm, 'i')] } },
+        { material: { $regex: searchTerm, $options: 'i' } }
       ];
     }
 
-    // Execute database query
-    const products = await Product.find(query)
-      .populate('category', 'name slug')
-      .sort({ [sortBy]: sortOrder })
-      .skip(skip)
-      .limit(limit)
-      .lean();
+    // Build sort object
+    const sortBy = searchParams.get('sortBy') || 'createdAt';
+    const sortOrder = searchParams.get('sortOrder') === 'asc' ? 1 : -1;
+    let sort = { [sortBy]: sortOrder };
 
-    const total = await Product.countDocuments(query);
+    // Special sort cases
+    if (sortBy === 'popularity') {
+      sort = { rating: -1, numReviews: -1, createdAt: -1 };
+    } else if (sortBy === 'discount') {
+      sort = { onSale: -1, createdAt: -1 };
+    }
+
+    // Execute queries
+    const [products, total] = await Promise.all([
+      Product.find(filter)
+        .populate('category', 'name slug')
+        .sort(sort)
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Product.countDocuments(filter)
+    ]);
+
+    const pages = Math.ceil(total / limit);
 
     return NextResponse.json({
       success: true,
@@ -73,13 +115,16 @@ export async function GET(request) {
         page,
         limit,
         total,
-        pages: Math.ceil(total / limit),
-      },
+        pages,
+        hasNext: page < pages,
+        hasPrev: page > 1
+      }
     });
+
   } catch (error) {
-    console.error('Get products error:', error);
+    console.error('Products API Error:', error);
     return NextResponse.json(
-      { success: false, message: 'Server error', error: error.message },
+      { success: false, error: 'Failed to fetch products' },
       { status: 500 }
     );
   }

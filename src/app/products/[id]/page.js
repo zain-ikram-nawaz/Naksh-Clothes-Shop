@@ -42,9 +42,9 @@ export default async function ProductDetailPage({ params }) {
 
   if (!product) {
     return (
-       <div className="bg-[#f8fafc] min-h-screen flex flex-col justify-center items-center">
-         <h1 className="text-4xl font-black">PIECE NOT FOUND</h1>
-         <Link href="/products" className="mt-4 underline text-xs tracking-widest">BACK TO COLLECTION</Link>
+       <div className="bg-main-bg min-h-screen flex flex-col justify-center items-center font-sans">
+         <h1 className="text-4xl font-black text-text">PIECE NOT FOUND</h1>
+         <Link href="/products" className="mt-4 underline text-xs tracking-widest text-text">BACK TO COLLECTION</Link>
        </div>
     );
   }
@@ -54,17 +54,17 @@ export default async function ProductDetailPage({ params }) {
     : 0;
 
   return (
-    <div className="bg-[#f8fafc] min-h-screen">
+    <div className="bg-main-bg min-h-screen font-sans">
       <Navbar />
 
       <main className="container mx-auto pt-20 px-6 py-12">
-        {/* Minimal Breadcrumb */}
-        <nav className="text-[10px] uppercase tracking-[0.2em] font-bold text-slate-400 mb-10 flex gap-2">
-          <Link href="/" className="hover:text-black">Home</Link>
+        {/* Breadcrumb */}
+        <nav className="text-[10px] uppercase tracking-[0.2em] font-bold text-text opacity-60 mb-10 flex gap-2">
+          <Link href="/" className="hover:opacity-100">Home</Link>
           <span>/</span>
-          <Link href="/products" className="hover:text-black">Products</Link>
+          <Link href="/products" className="hover:opacity-100">Products</Link>
           <span>/</span>
-          <span className="text-black italic">{product.name}</span>
+          <span className="text-text opacity-100 italic">{product.name}</span>
         </nav>
 
         <div className="grid lg:grid-cols-12 gap-16">
@@ -78,30 +78,30 @@ export default async function ProductDetailPage({ params }) {
           {/* Right: Info */}
           <div className="lg:col-span-5 space-y-10">
             <section>
-              <span className="text-[10px] uppercase tracking-[0.3em] font-black text-blue-600 mb-2 block">
+              <span className="text-[10px] uppercase tracking-[0.3em] font-black text-text opacity-80 mb-2 block">
                 {product.brand || 'Naksh Original'}
               </span>
-              <h1 className="text-5xl font-black uppercase tracking-tighter leading-none text-slate-900 mb-6">
+              <h1 className="text-5xl font-black uppercase tracking-tighter leading-none text-text mb-6">
                 {product.name}
               </h1>
 
-              {/* Rating Mini */}
+              {/* Rating */}
               {product.rating > 0 && (
                 <div className="flex items-center gap-1 mb-6">
                   {[...Array(5)].map((_, i) => (
-                    <span key={i} className={i < Math.floor(product.rating) ? "text-yellow-400" : "text-slate-200"}>★</span>
+                    <span key={i} className={i < Math.floor(product.rating) ? "text-yellow-400" : "text-accent-dim"}>★</span>
                   ))}
-                  <span className="text-[10px] font-bold text-slate-400 ml-2">({product.numReviews} REVIEWS)</span>
+                  <span className="text-[10px] font-bold text-text opacity-60 ml-2">({product.numReviews} REVIEWS)</span>
                 </div>
               )}
 
               <div className="flex items-baseline gap-4">
-                <span className="text-4xl font-black text-slate-900 tracking-tighter">₹{product.price}</span>
+                <span className="text-4xl font-black text-text tracking-tighter">₹{product.price}</span>
                 {product.comparePrice && (
-                  <span className="text-xl text-slate-300 line-through font-medium">₹{product.comparePrice}</span>
+                  <span className="text-xl text-text opacity-40 line-through font-medium">₹{product.comparePrice}</span>
                 )}
                 {discountPercentage > 0 && (
-                  <span className="text-[10px] font-black bg-red-50 text-red-500 px-2 py-1 uppercase">-{discountPercentage}%</span>
+                  <span className="text-[10px] font-black bg-red-50 text-red-500 px-2 py-1 uppercase rounded-sm">-{discountPercentage}%</span>
                 )}
               </div>
             </section>
@@ -109,50 +109,28 @@ export default async function ProductDetailPage({ params }) {
             {/* Colors Section */}
             {product.colors?.length > 0 && (
               <div>
-                <h3 className="text-[10px] uppercase tracking-widest font-black mb-4 text-slate-400">Available Palette</h3>
+                <h3 className="text-[10px] uppercase tracking-widest font-black mb-4 text-text opacity-60">Available Palette</h3>
                 <div className="flex gap-4">
                   {product.colors.map((color, i) => (
                     <div key={i} className="flex flex-col items-center gap-2">
-                      <div className="w-8 h-8 rounded-full border border-slate-200 p-0.5 hover:scale-110 transition-all cursor-pointer">
+                      <div className="w-8 h-8 rounded-full border border-accent-dim p-0.5 hover:scale-110 transition-all cursor-pointer">
                         <div className="w-full h-full rounded-full" style={{ backgroundColor: color.hexCode }} />
                       </div>
-                      <span className="text-[8px] font-bold text-slate-500 uppercase tracking-tighter">{color.name}</span>
+                      <span className="text-[8px] font-bold text-text opacity-60 uppercase tracking-tighter">{color.name}</span>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Sizes Section
-            {product.sizes?.length > 0 && (
-              <div>
-                <h3 className="text-[10px] uppercase tracking-widest font-black mb-4 text-slate-400">Select Dimension</h3>
-                <div className="flex flex-wrap gap-2">
-                  {product.sizes.map((s, i) => (
-                    <button
-                      key={i}
-                      disabled={s.stock === 0}
-                      className={`px-6 py-3 text-xs font-black border transition-all ${
-                        s.stock > 0
-                        ? 'border-slate-200 hover:border-black hover:bg-black hover:text-white'
-                        : 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed line-through'
-                      }`}
-                    >
-                      {s.size}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )} */}
-
-            {/* Features (Checklist style) */}
+            {/* Features */}
             {product.features?.length > 0 && (
-              <div className="py-6 border-t border-slate-100">
-                <h3 className="text-[10px] uppercase tracking-widest font-black mb-4 text-slate-400">Key Attributes</h3>
+              <div className="py-6 border-t border-accent-dim">
+                <h3 className="text-[10px] uppercase tracking-widest font-black mb-4 text-text opacity-60">Key Attributes</h3>
                 <ul className="grid grid-cols-2 gap-y-2">
                   {product.features.map((feature, i) => (
-                    <li key={i} className="text-[11px] font-bold text-slate-600 flex items-center gap-2">
-                      <span className="text-blue-500 text-lg">·</span> {feature.toUpperCase()}
+                    <li key={i} className="text-[11px] font-bold text-text opacity-80 flex items-center gap-2">
+                      <span className="text-text text-lg">·</span> {feature.toUpperCase()}
                     </li>
                   ))}
                 </ul>
@@ -162,22 +140,22 @@ export default async function ProductDetailPage({ params }) {
             <AddToCartButton product={product} />
 
             {/* Material & Care Card */}
-            <div className="bg-white border border-slate-100 p-6 space-y-4">
+            <div className="bg-card-bg border border-accent-dim rounded-md p-6 space-y-4">
               <div>
-                <h3 className="text-[10px] uppercase tracking-widest font-black text-slate-400 mb-2">Material Composition</h3>
-                <p className="text-xs font-bold text-slate-800">{product.material || 'NOT SPECIFIED'}</p>
+                <h3 className="text-[10px] uppercase tracking-widest font-black text-text opacity-60 mb-2">Material Composition</h3>
+                <p className="text-xs font-bold text-text">{product.material || 'NOT SPECIFIED'}</p>
               </div>
               {product.careInstructions?.length > 0 && (
                 <div>
-                  <h3 className="text-[10px] uppercase tracking-widest font-black text-slate-400 mb-2">Care Guide</h3>
-                  <div className="text-[10px] font-medium text-slate-500 space-y-1">
+                  <h3 className="text-[10px] uppercase tracking-widest font-black text-text opacity-60 mb-2">Care Guide</h3>
+                  <div className="text-[10px] font-medium text-text opacity-70 space-y-1">
                     {product.careInstructions.map((ins, i) => <p key={i}>• {ins}</p>)}
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Minimalist Specs Table */}
+            {/* Specs Table */}
             <div className="pt-6 space-y-3">
                {[
                  { label: 'SKU', value: product.sku },
@@ -185,12 +163,12 @@ export default async function ProductDetailPage({ params }) {
                  { label: 'Origin', value: product.madeIn },
                  { label: 'Type', value: product.productType?.replace('-', ' ') }
                ].map((spec, i) => spec.value && (
-                 <div key={i} className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest py-2 border-b border-slate-50">
-                   <span className="text-slate-400">{spec.label}</span>
+                 <div key={i} className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest py-2 border-b border-accent-dim">
+                   <span className="text-text opacity-60">{spec.label}</span>
                    {spec.link ? (
-                     <Link href={spec.link} className="text-blue-600 hover:underline">{spec.value}</Link>
+                     <Link href={spec.link} className="text-text hover:underline">{spec.value}</Link>
                    ) : (
-                     <span className="text-slate-900">{spec.value}</span>
+                     <span className="text-text">{spec.value}</span>
                    )}
                  </div>
                ))}
@@ -198,10 +176,10 @@ export default async function ProductDetailPage({ params }) {
           </div>
         </div>
 
-        {/* Studio Notes (Full Description) */}
-        <div className="mt-32 max-w-4xl mx-auto border-t border-slate-200 pt-20 text-center">
-          <h2 className="text-[11px] uppercase font-black tracking-[0.5em] mb-12 text-slate-400">Studio Notes & Composition</h2>
-          <div className="prose prose-slate max-w-none text-slate-600 leading-relaxed font-medium italic text-lg">
+        {/* Studio Notes */}
+        <div className="mt-32 max-w-4xl mx-auto border-t border-accent-dim pt-20 text-center">
+          <h2 className="text-[11px] uppercase font-black tracking-[0.5em] mb-12 text-text opacity-60">Studio Notes & Composition</h2>
+          <div className="text-text opacity-80 leading-relaxed font-medium italic text-lg">
              "{product.description}"
           </div>
         </div>
