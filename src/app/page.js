@@ -118,7 +118,7 @@ export default async function HomePage() {
       <section className="bg-card-bg pt-16 pb-24 border-b border-accent-dim">
         <div className="container mx-auto px-4 mt-10 text-center">
           <div className="inline-block px-3 py-1 border border-text text-[10px] uppercase tracking-[0.3em] font-bold mb-8 rounded-sm">
-            Est. 2026
+            Est... 2026
           </div>
           <h1 className="text-7xl md:text-9xl font-black uppercase tracking-tighter leading-[0.8] mb-10 text-text">
             Naksh <br />
