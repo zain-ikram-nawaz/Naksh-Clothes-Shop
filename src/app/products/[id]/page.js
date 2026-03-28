@@ -2,12 +2,49 @@ import Link from 'next/link';
 import Navbar from '@/components/ui/Navbar';
 import Footer from '@/components/ui/Footer';
 import ProductGallery from '@/components/products/ProductGallery';
-import AddToCartButton from '@/components/products/AddToCartButton';
+import WhatsAppOrderButton from '../WhatsAppOrderButton';
 import connectDB from '@/lib/mongodb';
 import Product from '@/models/Product';
-import Category from '@/models/Category';
 
 export const dynamic = 'force-dynamic';
+
+// Helper functions for price calculation (same as before)
+function getProductPrice(product) {
+  if (product.basePrice) return product.basePrice;
+  if (product.sizes && product.sizes.length > 0) {
+    const prices = product.sizes.filter(size => size.price > 0).map(size => size.price);
+    if (prices.length > 0) return Math.min(...prices);
+  }
+  if (product.price) return product.price;
+  return 0;
+}
+
+function getComparePrice(product) {
+  if (product.sizes && product.sizes.length > 0) {
+    const comparePrices = product.sizes.filter(size => size.comparePrice > 0).map(size => size.comparePrice);
+    if (comparePrices.length > 0) return Math.min(...comparePrices);
+  }
+  return product.comparePrice || null;
+}
+
+function getPriceRange(product) {
+  if (product.basePrice) return `₹${product.basePrice}`;
+  if (product.sizes && product.sizes.length > 0) {
+    const prices = product.sizes.filter(size => size.price > 0).map(size => size.price);
+    if (prices.length === 0) return 'Price not set';
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+    return minPrice === maxPrice ? `₹${minPrice}` : `₹${minPrice} - ₹${maxPrice}`;
+  }
+  return product.price ? `₹${product.price}` : 'Price not set';
+}
+
+function isProductOnSale(product) {
+  if (product.sizes && product.sizes.length > 0) {
+    return product.sizes.some(size => size.onSale);
+  }
+  return product.onSale || false;
+}
 
 async function getProduct(id) {
   try {
@@ -49,8 +86,12 @@ export default async function ProductDetailPage({ params }) {
     );
   }
 
-  const discountPercentage = product.comparePrice
-    ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)
+  const currentPrice = getProductPrice(product);
+  const comparePrice = getComparePrice(product);
+  const onSale = isProductOnSale(product);
+
+  const discountPercentage = comparePrice && currentPrice
+    ? Math.round(((comparePrice - currentPrice) / comparePrice) * 100)
     : 0;
 
   return (
@@ -95,16 +136,89 @@ export default async function ProductDetailPage({ params }) {
                 </div>
               )}
 
-              <div className="flex items-baseline gap-4">
-                <span className="text-4xl font-black text-text tracking-tighter">Rs {product.price}</span>
-                {product.comparePrice && (
-                  <span className="text-xl text-text opacity-40 line-through font-medium">Rs {product.comparePrice}</span>
+              {/* Price Section */}
+              <div className="space-y-3">
+                {product.sizes && product.sizes.length > 1 ? (
+                  <div className="flex items-baseline gap-4">
+                    <span className="text-4xl font-black text-text tracking-tighter">
+                      {getPriceRange(product)}
+                    </span>
+                    {comparePrice && (
+                      <span className="text-xl text-text opacity-40 line-through font-medium">
+                        ₹{comparePrice}
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-baseline gap-4">
+                    <span className="text-4xl font-black text-text tracking-tighter">
+                      ₹{currentPrice}
+                    </span>
+                    {comparePrice && (
+                      <span className="text-xl text-text opacity-40 line-through font-medium">
+                        ₹{comparePrice}
+                      </span>
+                    )}
+                  </div>
                 )}
-                {discountPercentage > 0 && (
-                  <span className="text-[10px] font-black bg-red-50 text-red-500 px-2 py-1 uppercase rounded-sm">-{discountPercentage}%</span>
+
+                {/* Badges */}
+                <div className="flex gap-2">
+                  {discountPercentage > 0 && (
+                    <span className="text-[10px] font-black bg-red-50 text-red-500 px-2 py-1 uppercase rounded-sm">
+                      -{discountPercentage}% OFF
+                    </span>
+                  )}
+                  {onSale && (
+                    <span className="text-[10px] font-black bg-green-50 text-green-600 px-2 py-1 uppercase rounded-sm">
+                      ON SALE
+                    </span>
+                  )}
+                  {product.trending && (
+                    <span className="text-[10px] font-black bg-red-50 text-red-500 px-2 py-1 uppercase rounded-sm">
+                      🔥 TRENDING
+                    </span>
+                  )}
+                </div>
+
+                {product.sizes && product.sizes.length > 0 && (
+                  <p className="text-[10px] text-text opacity-60 uppercase tracking-widest">
+                    {product.sizes.length} size{product.sizes.length > 1 ? 's' : ''} available
+                  </p>
                 )}
               </div>
             </section>
+
+            {/* Sizes Section (if available) */}
+            {product.sizes && product.sizes.length > 0 && (
+              <div>
+                <h3 className="text-[10px] uppercase tracking-widest font-black mb-4 text-text opacity-60">
+                  Available Sizes
+                </h3>
+                <div className="grid grid-cols-3 gap-3">
+                  {product.sizes.map((size, i) => (
+                    <div key={i} className="border border-accent-dim rounded-md p-3 text-center hover:border-text transition-colors">
+                      <div className="text-sm font-black text-text uppercase tracking-tight">
+                        {size.size}
+                      </div>
+                      <div className="text-[10px] text-text opacity-60 mt-1">
+                        ₹{size.price}
+                      </div>
+                      {size.stock <= 0 && (
+                        <div className="text-[8px] text-red-500 font-bold uppercase tracking-widest mt-1">
+                          Out of Stock
+                        </div>
+                      )}
+                      {size.stock > 0 && size.stock <= (product.lowStockThreshold || 5) && (
+                        <div className="text-[8px] text-yellow-600 font-bold uppercase tracking-widest mt-1">
+                          Low Stock ({size.stock})
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Colors Section */}
             {product.colors?.length > 0 && (
@@ -137,7 +251,8 @@ export default async function ProductDetailPage({ params }) {
               </div>
             )}
 
-            <AddToCartButton product={product} />
+            {/* WhatsApp Order Button - Replace AddToCartButton */}
+            <WhatsAppOrderButton product={product} />
 
             {/* Material & Care Card */}
             <div className="bg-card-bg border border-accent-dim rounded-md p-6 space-y-4">
@@ -161,7 +276,8 @@ export default async function ProductDetailPage({ params }) {
                  { label: 'SKU', value: product.sku },
                  { label: 'Category', value: product.category?.name, link: `/categories/${product.category?.slug}` },
                  { label: 'Origin', value: product.madeIn },
-                 { label: 'Type', value: product.productType?.replace('-', ' ') }
+                 { label: 'Type', value: product.productType?.replace('-', ' ') },
+                 { label: 'Total Stock', value: product.sizes?.reduce((sum, size) => sum + (size.stock || 0), 0) || product.stock || 0 }
                ].map((spec, i) => spec.value && (
                  <div key={i} className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest py-2 border-b border-accent-dim">
                    <span className="text-text opacity-60">{spec.label}</span>

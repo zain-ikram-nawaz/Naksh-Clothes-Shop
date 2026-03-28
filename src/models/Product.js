@@ -20,15 +20,14 @@ const ProductSchema = new mongoose.Schema({
     type: String,
     maxlength: [500, 'Short description cannot be more than 500 characters'],
   },
-  price: {
+
+  // Base price - minimum price ya starting price
+  basePrice: {
     type: Number,
-    required: [true, 'Please provide a price'],
+    required: [true, 'Please provide a base price'],
     min: [0, 'Price cannot be negative'],
   },
-  comparePrice: {
-    type: Number,
-    min: [0, 'Compare price cannot be negative'],
-  },
+
   category: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Category',
@@ -41,6 +40,7 @@ const ProductSchema = new mongoose.Schema({
     required: [true, 'Please select a product type'],
   },
 
+  // Updated sizes with individual pricing
   sizes: [{
     size: {
       type: String,
@@ -53,6 +53,28 @@ const ProductSchema = new mongoose.Schema({
       min: [0, 'Stock cannot be negative'],
       default: 0,
     },
+    price: {
+      type: Number,
+      required: true,
+      min: [0, 'Price cannot be negative'],
+    },
+    comparePrice: {
+      type: Number,
+      min: [0, 'Compare price cannot be negative'],
+    },
+    salePrice: {
+      type: Number,
+      min: [0, 'Sale price cannot be negative'],
+    },
+    onSale: {
+      type: Boolean,
+      default: false,
+    },
+    // Size-specific SKU
+    sku: {
+      type: String,
+      sparse: true,
+    }
   }],
 
   colors: [{
@@ -63,10 +85,12 @@ const ProductSchema = new mongoose.Schema({
     hexCode: {
       type: String,
       required: true,
+      match: [/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, 'Please provide a valid hex color code'],
     },
     images: [{
       url: String,
       publicId: String,
+      alt: String,
     }],
   }],
 
@@ -152,15 +176,6 @@ const ProductSchema = new mongoose.Schema({
     default: false,
   },
 
-  onSale: {
-    type: Boolean,
-    default: false,
-  },
-  salePrice: {
-    type: Number,
-    min: [0, 'Sale price cannot be negative'],
-  },
-
   rating: {
     type: Number,
     default: 0,
@@ -172,7 +187,8 @@ const ProductSchema = new mongoose.Schema({
     default: 0,
   },
 
-  sku: {
+  // Main product SKU
+  productSku: {
     type: String,
     unique: true,
     sparse: true,
@@ -187,13 +203,52 @@ const ProductSchema = new mongoose.Schema({
       default: 'g',
     },
   },
+
+  // Inventory tracking
+  totalStock: {
+    type: Number,
+    default: 0,
+  },
+  lowStockThreshold: {
+    type: Number,
+    default: 5,
+  },
+
 }, {
-  timestamps: true  // Ye automatically createdAt aur updatedAt manage karega
+  timestamps: true
+});
+
+// Virtual for checking if product is in stock
+ProductSchema.virtual('inStock').get(function() {
+  return this.totalStock > 0;
+});
+
+// Virtual for getting price range
+ProductSchema.virtual('priceRange').get(function() {
+  if (!this.sizes || this.sizes.length === 0) return null;
+
+  const prices = this.sizes.map(size => size.price);
+  const minPrice = Math.min(...prices);
+  const maxPrice = Math.max(...prices);
+
+  return minPrice === maxPrice ? minPrice : { min: minPrice, max: maxPrice };
+});
+
+// Pre-save middleware to calculate total stock
+ProductSchema.pre('save', function(next) {
+  if (this.sizes && this.sizes.length > 0) {
+    this.totalStock = this.sizes.reduce((total, size) => total + size.stock, 0);
+  }
+  next();
 });
 
 // Create indexes for better query performance
 ProductSchema.index({ name: 'text', description: 'text' });
 ProductSchema.index({ category: 1, status: 1 });
 ProductSchema.index({ slug: 1 });
+ProductSchema.index({ 'sizes.price': 1 });
+ProductSchema.index({ basePrice: 1 });
+ProductSchema.index({ featured: 1, status: 1 });
+ProductSchema.index({ trending: 1, status: 1 });
 
 export default mongoose.models.Product || mongoose.model('Product', ProductSchema);

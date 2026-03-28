@@ -1,22 +1,23 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { useSearchParams, useRouter } from 'next/navigation';
 
-export default function ProductForm({ product = null, isEdit = false }) {
+export default function ProductForm({ product = null }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
   const [activeTab, setActiveTab] = useState('core');
-
+  const editId = searchParams.get('edit');
+  const isEditing = !!editId;
   const [formData, setFormData] = useState({
     name: product?.name || '',
     description: product?.description || '',
     shortDescription: product?.shortDescription || '',
-    price: product?.price || '',
-    comparePrice: product?.comparePrice || '',
+    basePrice: product?.basePrice || '', // Changed from price to basePrice
     category: product?.category?._id || '',
     productType: product?.productType || 'half-sleeve',
     material: product?.material || '100% Cotton',
@@ -31,16 +32,15 @@ export default function ProductForm({ product = null, isEdit = false }) {
     status: product?.status || 'active',
     featured: product?.featured || false,
     trending: product?.trending || false,
-    onSale: product?.onSale || false,
-    salePrice: product?.salePrice || '',
-    sku: product?.sku || '',
+    productSku: product?.productSku || '', // Changed from sku to productSku
     barcode: product?.barcode || '',
     images: product?.images || [],
+    // Updated sizes structure with individual pricing
     sizes: product?.sizes || [
-      { size: 'S', stock: 0 },
-      { size: 'M', stock: 0 },
-      { size: 'L', stock: 0 },
-      { size: 'XL', stock: 0 },
+      { size: 'S', stock: 0, price: '', comparePrice: '', salePrice: '', onSale: false, sku: '' },
+      { size: 'M', stock: 0, price: '', comparePrice: '', salePrice: '', onSale: false, sku: '' },
+      { size: 'L', stock: 0, price: '', comparePrice: '', salePrice: '', onSale: false, sku: '' },
+      { size: 'XL', stock: 0, price: '', comparePrice: '', salePrice: '', onSale: false, sku: '' },
     ],
     colors: product?.colors || [],
     features: product?.features || [],
@@ -54,7 +54,69 @@ export default function ProductForm({ product = null, isEdit = false }) {
     metaTitle: product?.metaTitle || '',
     metaDescription: product?.metaDescription || '',
     keywords: product?.keywords || [],
+    lowStockThreshold: product?.lowStockThreshold || 5,
   });
+
+  // Fetch product data for editing
+  useEffect(() => {
+    if (isEditing) {
+      fetchProductData();
+    }
+    fetchCategories();
+  }, [editId]);
+  // ProductForm.js (Selected Parts)
+
+  // 1. Fetch logic fix (Auto-fill issue)
+  const fetchProductData = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/products/${editId}`);
+      const result = await response.json();
+
+      if (result.success && result.data) {
+        const p = result.data;
+        // Map ALL fields carefully
+        setFormData({
+          name: p.name || '',
+          description: p.description || '',
+          shortDescription: p.shortDescription || '',
+          basePrice: p.basePrice || '',
+          category: p.category?._id || p.category || '',
+          productType: p.productType || 'half-sleeve',
+          material: p.material || '',
+          fabricType: p.fabricType || 'cotton',
+          gsm: p.gsm || '',
+          fit: p.fit || 'regular',
+          neckline: p.neckline || 'round',
+          sleeveLength: p.sleeveLength || 'short',
+          pattern: p.pattern || 'solid',
+          brand: p.brand || 'Naksh',
+          madeIn: p.madeIn || 'India',
+          status: p.status || 'active',
+          featured: p.featured || false,
+          trending: p.trending || false,
+          productSku: p.productSku || '', // Yeh "pro-1" load karega
+          barcode: p.barcode || '',
+          images: p.images || [], // Cloudinary images
+          sizes: p.sizes?.length ? p.sizes : formData.sizes,
+          colors: p.colors || [],
+          features: p.features || [],
+          careInstructions: p.careInstructions || [],
+          weight: p.weight || { value: '', unit: 'g' },
+          metaTitle: p.metaTitle || '',
+          metaDescription: p.metaDescription || '',
+          keywords: p.keywords || [],
+          lowStockThreshold: p.lowStockThreshold || 5,
+        });
+      }
+    } catch (error) {
+      console.error('Fetch error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
 
   useEffect(() => { fetchCategories(); }, []);
 
@@ -71,36 +133,94 @@ export default function ProductForm({ product = null, isEdit = false }) {
     setFormData({ ...formData, [name]: type === 'checkbox' ? checked : value });
   };
 
+  // Size management functions
+  const handleSizeChange = (index, field, value) => {
+    const newSizes = [...formData.sizes];
+    if (field === 'stock' || field === 'price' || field === 'comparePrice' || field === 'salePrice') {
+      newSizes[index][field] = value === '' ? '' : Number(value);
+    } else {
+      newSizes[index][field] = value;
+    }
+    setFormData({ ...formData, sizes: newSizes });
+  };
+
+  const addSize = () => {
+    const availableSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
+    const usedSizes = formData.sizes.map(s => s.size);
+    const nextSize = availableSizes.find(size => !usedSizes.includes(size));
+
+    if (nextSize) {
+      setFormData({
+        ...formData,
+        sizes: [...formData.sizes, {
+          size: nextSize,
+          stock: 0,
+          price: '',
+          comparePrice: '',
+          salePrice: '',
+          onSale: false,
+          sku: ''
+        }]
+      });
+    }
+  };
+
+  const removeSize = (index) => {
+    const newSizes = formData.sizes.filter((_, i) => i !== index);
+    setFormData({ ...formData, sizes: newSizes });
+  };
+
   // --- SUBMIT LOGIC ---
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
 
+    // 1. Double request rokne ke liye check
+    if (loading) return;
+
+    setLoading(true);
     const token = localStorage.getItem('token');
 
-    // DATA CLEANING
-    const submissionData = {
-      ...formData,
-      price: Number(formData.price),
-      comparePrice: formData.comparePrice ? Number(formData.comparePrice) : 0,
-      salePrice: formData.salePrice ? Number(formData.salePrice) : undefined,
-      gsm: formData.gsm ? Number(formData.gsm) : undefined,
-      category: typeof formData.category === 'object' ? formData.category._id : formData.category,
-      productType: formData.productType || 'half-sleeve',
-      weight: {
-        value: formData.weight.value ? Number(formData.weight.value) : undefined,
-        unit: formData.weight.unit || 'g',
-      },
-    };
+    // 2. Validation
+    const hasValidSize = formData.sizes.some(size => Number(size.price) > 0);
+    if (!hasValidSize) {
+      alert("Please set price for at least one size");
+      setLoading(false);
+      return;
+    }
 
-    if (submissionData.images.length === 0) {
+    if (formData.images.length === 0) {
       alert("Please upload at least one image");
       setLoading(false);
       return;
     }
 
-    const url = isEdit ? `/api/admin/products?id=${product._id}` : '/api/admin/products';
-    const method = isEdit ? 'PUT' : 'POST';
+    // 3. Data Cleaning (Ensuring productSku is not empty if required)
+    const submissionData = {
+      ...formData,
+      basePrice: Number(formData.basePrice),
+      gsm: formData.gsm ? Number(formData.gsm) : undefined,
+      // Agar SKU khali hai to use null ya unique string dein
+      productSku: formData.productSku.trim() || `SKU-${Date.now()}`,
+      category: typeof formData.category === 'object' ? formData.category._id : formData.category,
+      weight: {
+        value: formData.weight.value ? Number(formData.weight.value) : undefined,
+        unit: formData.weight.unit || 'g',
+      },
+      sizes: formData.sizes
+        .filter(size => Number(size.price) > 0)
+        .map(size => ({
+          ...size,
+          stock: Number(size.stock) || 0,
+          price: Number(size.price),
+          comparePrice: size.comparePrice ? Number(size.comparePrice) : undefined,
+          salePrice: size.salePrice ? Number(size.salePrice) : undefined,
+        })),
+    };
+
+    // 4. Correct URL & Method for Edit vs Create
+    // Edit ke liye humesha editId (jo searchParams se milta hai) use karein
+    const url = isEditing ? `/api/admin/products?id=${editId}` : '/api/admin/products';
+    const method = isEditing ? 'PUT' : 'POST';
 
     try {
       const res = await fetch(url, {
@@ -115,12 +235,12 @@ export default function ProductForm({ product = null, isEdit = false }) {
       const data = await res.json();
 
       if (data.success) {
-        alert(isEdit ? 'Product updated!' : 'Product created!');
+        alert(isEditing ? 'Product updated successfully!' : 'Product created successfully!');
         router.push('/admin/products');
         router.refresh();
       } else {
-        console.error("Server Error:", data.error);
-        alert(`Error: ${data.message || 'Check fields'}`);
+        // Agar yahan E11000 error aaye to iska matlab DB mein issue hai
+        alert(`Error: ${data.message || 'Duplicate SKU found. Please change the SKU code.'}`);
       }
     } catch (error) {
       console.error('Submit error:', error);
@@ -130,64 +250,70 @@ export default function ProductForm({ product = null, isEdit = false }) {
     }
   };
 
-  // --- IMAGE UPLOAD LOGIC ---
-  // --- IMAGE UPLOAD LOGIC ---
-// ProductForm.jsx mein handleImageUpload function update karein
+  const handleImageUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+    setUploadingImages(true);
 
-const handleImageUpload = async (e) => {
-  const files = Array.from(e.target.files);
-  if (files.length === 0) return;
-
-  setUploadingImages(true);
-  const formDataImages = new FormData();
-
-  // Multiple images ko append karein
-  files.forEach(file => {
-    formDataImages.append('file', file);
-  });
-
-  try {
-    const token = localStorage.getItem('token'); // Token get karein
-
-    const res = await fetch('/api/admin/upload', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}` // Token add karein
-      },
-      body: formDataImages,
-    });
-
-    const data = await res.json();
-
-    if (data.success) {
-      // Single upload response handle karein
-      const uploadedImage = {
-        url: data.data.url,
-        publicId: data.data.publicId,
-        alt: formData.name || 'Product image'
-      };
-
-      // Form state update karein
-      const newImages = [...formData.images, uploadedImage];
-      setFormData(prev => ({ ...prev, images: newImages }));
-    } else {
-      alert(data.message || 'Upload failed');
+    try {
+      const token = localStorage.getItem('token');
+      for (const file of files) {
+        const dataF = new FormData();
+        dataF.append('file', file);
+        const res = await fetch('/api/admin/upload', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` },
+          body: dataF,
+        });
+        const data = await res.json();
+        if (data.success) {
+          setFormData(prev => ({
+            ...prev,
+            images: [...prev.images, { url: data.data.url, publicId: data.data.publicId, alt: prev.name }]
+          }));
+        }
+      }
+    } catch (error) {
+      alert('Upload failed');
+    } finally {
+      setUploadingImages(false);
     }
-  } catch (error) {
-    console.error('Upload error:', error);
-    alert('Image upload failed');
-  } finally {
-    setUploadingImages(false);
-  }
-};
-
-
-  const handleRemoveImage = (index) => {
-    const newImages = formData.images.filter((_, i) => i !== index);
-    setFormData({ ...formData, images: newImages });
   };
 
-  // Color management functions
+  const handleRemoveImage = async (index, publicId) => {
+    if (!window.confirm("Are you sure you want to delete this image?")) return;
+
+    try {
+      const token = localStorage.getItem('token');
+
+      // 1. Cloudinary se delete karne ke liye API call
+      if (publicId) {
+        const res = await fetch('/api/admin/upload', {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ publicId }) // Body mein publicId bhej rahe hain
+        });
+
+        const data = await res.json();
+        if (!data.success) {
+          alert("Cloudinary delete failed: " + data.message);
+          return; // Agar server se delete nahi hui to UI se bhi mat hatao
+        }
+      }
+
+      // 2. UI State se remove karein
+      const updatedImages = formData.images.filter((_, i) => i !== index);
+      setFormData({ ...formData, images: updatedImages });
+
+    } catch (error) {
+      console.error("Delete Error:", error);
+      alert("An error occurred while deleting the image.");
+    }
+  };
+  // Color management functions (same as before)
   const handleAddColor = () => {
     setFormData({
       ...formData,
@@ -208,34 +334,29 @@ const handleImageUpload = async (e) => {
 
   const tabs = [
     { id: 'core', label: 'Core Info', icon: '📋' },
-    { id: 'pricing', label: 'Pricing', icon: '💰' },
+    { id: 'pricing', label: 'Pricing & Sizes', icon: '💰' }, // Updated label
     { id: 'specs', label: 'Specifications', icon: '📏' },
     { id: 'media', label: 'Media', icon: '🖼️' },
+    { id: 'colors', label: 'Colors', icon: '🎨' }, // Naya Tab
     { id: 'inventory', label: 'Inventory', icon: '📦' },
     { id: 'seo', label: 'SEO', icon: '🔍' },
   ];
 
   return (
     <form onSubmit={handleSubmit} className="min-h-screen bg-gray-50">
-      {/* Header */}
+      {/* Header - same as before */}
       <div className="sticky top-0 z-50 bg-white border-b border-gray-200 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <h1 className="text-xl font-semibold">
-              {isEdit ? 'Edit Product' : 'New Product'}
+              {isEditing ? 'Edit Product' : 'New Product'}
             </h1>
-            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-              formData.status === 'active' ? 'bg-green-100 text-green-700' :
+            <span className={`px-2 py-1 text-xs font-medium rounded-full ${formData.status === 'active' ? 'bg-green-100 text-green-700' :
               formData.status === 'draft' ? 'bg-yellow-100 text-yellow-700' :
-              'bg-gray-100 text-gray-700'
-            }`}>
+                'bg-gray-100 text-gray-700'
+              }`}>
               {formData.status}
             </span>
-            {formData.onSale && (
-              <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-700">
-                On Sale
-              </span>
-            )}
           </div>
           <div className="flex items-center gap-3">
             <button
@@ -250,13 +371,13 @@ const handleImageUpload = async (e) => {
               disabled={loading}
               className="px-6 py-2 bg-black text-white text-sm font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors rounded-lg"
             >
-              {loading ? 'Saving...' : isEdit ? 'Update Product' : 'Create Product'}
+              {loading ? 'Saving...' : isEditing ? 'Update Product' : 'Create Product'}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Tab Navigation */}
+      {/* Tab Navigation - same as before */}
       <div className="border-b border-gray-200 bg-white">
         <div className="max-w-7xl mx-auto px-6">
           <nav className="flex -mb-px space-x-8">
@@ -265,11 +386,10 @@ const handleImageUpload = async (e) => {
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors ${
-                  activeTab === tab.id
-                    ? 'border-black text-black'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
+                className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors ${activeTab === tab.id
+                  ? 'border-black text-black'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
               >
                 <span>{tab.icon}</span>
                 {tab.label}
@@ -281,10 +401,10 @@ const handleImageUpload = async (e) => {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Core Info Tab */}
+        {/* Core Info Tab - same as before but update SKU field */}
         {activeTab === 'core' && (
           <div className="space-y-8">
-            {/* Basic Information */}
+            {/* Basic Information - same as before */}
             <div className="bg-white rounded-xl border border-gray-200 p-6">
               <h2 className="text-lg font-medium mb-6">Basic Information</h2>
               <div className="space-y-4">
@@ -408,7 +528,7 @@ const handleImageUpload = async (e) => {
               </div>
             </div>
 
-            {/* Status & Visibility */}
+            {/* Status & Visibility - same as before */}
             <div className="bg-white rounded-xl border border-gray-200 p-6">
               <h2 className="text-lg font-medium mb-6">Status & Visibility</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -452,7 +572,7 @@ const handleImageUpload = async (e) => {
               </div>
             </div>
 
-            {/* Features */}
+            {/* Features - same as before */}
             <div className="bg-white rounded-xl border border-gray-200 p-6">
               <h2 className="text-lg font-medium mb-6">Product Features</h2>
               <div className="space-y-3">
@@ -498,120 +618,221 @@ const handleImageUpload = async (e) => {
           </div>
         )}
 
-        {/* Pricing Tab */}
+        {/* UPDATED Pricing Tab - Now includes size-wise pricing */}
         {activeTab === 'pricing' && (
           <div className="space-y-8">
+            {/* Base Price */}
             <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h2 className="text-lg font-medium mb-6">Pricing Information</h2>
+              <h2 className="text-lg font-medium mb-6">Base Pricing</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Price (Rs ) <span className="text-red-500">*</span>
+                    Base Price (Rs) <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="number"
-                    name="price"
-                    value={formData.price}
+                    name="basePrice"
+                    value={formData.basePrice}
                     onChange={handleChange}
                     required
                     min="0"
                     step="0.01"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all"
-                    placeholder="0.00"
+                    placeholder="Starting price"
                   />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Minimum/starting price for this product
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Compare at Price (Rs )
+                    Product SKU
                   </label>
                   <input
-                    type="number"
-                    name="comparePrice"
-                    value={formData.comparePrice}
+                    type="text"
+                    name="productSku"
+                    value={formData.productSku}
                     onChange={handleChange}
-                    min="0"
-                    step="0.01"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all"
-                    placeholder="0.00"
+                    placeholder="PROD-12345"
                   />
-                  <p className="mt-1 text-xs text-gray-500">
-                    Original price for showing discounts
-                  </p>
                 </div>
               </div>
             </div>
 
-            {/* Sale Section */}
+            {/* Size-wise Pricing */}
             <div className="bg-white rounded-xl border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-medium">Sale Settings</h2>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    name="onSale"
-                    checked={formData.onSale}
-                    onChange={handleChange}
-                    className="w-4 h-4 text-black border-gray-300 rounded focus:ring-black"
-                  />
-                  <span className="text-sm text-gray-700">Product on Sale</span>
-                </label>
+                <h2 className="text-lg font-medium">Size-wise Pricing</h2>
+                <button
+                  type="button"
+                  onClick={addSize}
+                  className="px-4 py-2 bg-black text-white text-sm rounded-lg hover:bg-gray-800 transition-colors"
+                >
+                  + Add Size
+                </button>
               </div>
 
-              {formData.onSale && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Sale Price (Rs )
-                  </label>
-                  <input
-                    type="number"
-                    name="salePrice"
-                    value={formData.salePrice}
-                    onChange={handleChange}
-                    min="0"
-                    step="0.01"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all"
-                    placeholder="0.00"
-                  />
+              <div className="space-y-4">
+                {formData.sizes.map((sizeItem, index) => (
+                  <div key={index} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-medium">Size {sizeItem.size}</h3>
+                      <button
+                        type="button"
+                        onClick={() => removeSize(index)}
+                        className="text-red-500 hover:text-red-700 text-sm"
+                      >
+                        Remove
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Price (Rs) <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="number"
+                          value={sizeItem.price}
+                          onChange={(e) => handleSizeChange(index, 'price', e.target.value)}
+                          min="0"
+                          step="0.01"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all"
+                          placeholder="0.00"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Compare Price (Rs)
+                        </label>
+                        <input
+                          type="number"
+                          value={sizeItem.comparePrice}
+                          onChange={(e) => handleSizeChange(index, 'comparePrice', e.target.value)}
+                          min="0"
+                          step="0.01"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all"
+                          placeholder="0.00"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Stock
+                        </label>
+                        <input
+                          type="number"
+                          value={sizeItem.stock}
+                          onChange={(e) => handleSizeChange(index, 'stock', e.target.value)}
+                          min="0"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all"
+                          placeholder="0"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Size SKU
+                        </label>
+                        <input
+                          type="text"
+                          value={sizeItem.sku}
+                          onChange={(e) => handleSizeChange(index, 'sku', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all"
+                          placeholder="SKU-S-001"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Sale Settings per size */}
+                    <div className="mt-4 pt-4 border-t border-gray-100">
+                      <div className="flex items-center gap-4 mb-3">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={sizeItem.onSale}
+                            onChange={(e) => handleSizeChange(index, 'onSale', e.target.checked)}
+                            className="w-4 h-4 text-black border-gray-300 rounded focus:ring-black"
+                          />
+                          <span className="text-sm text-gray-700">On Sale</span>
+                        </label>
+                      </div>
+
+                      {sizeItem.onSale && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Sale Price (Rs)
+                            </label>
+                            <input
+                              type="number"
+                              value={sizeItem.salePrice}
+                              onChange={(e) => handleSizeChange(index, 'salePrice', e.target.value)}
+                              min="0"
+                              step="0.01"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all"
+                              placeholder="0.00"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                {formData.sizes.length === 0 && (
+                  <p className="text-center text-gray-500 py-8">
+                    No sizes added yet. Click "Add Size" to start.
+                  </p>
+                )}
+              </div>
+
+
+              {/* Price Summary */}
+              {formData.sizes.length > 0 && (
+                <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                  <h4 className="font-medium text-blue-900 mb-2">Price Range Summary</h4>
+                  <div className="text-sm text-blue-800">
+                    {(() => {
+                      const prices = formData.sizes.filter(s => s.price > 0).map(s => Number(s.price));
+                      if (prices.length === 0) return "No prices set";
+                      const minPrice = Math.min(...prices);
+                      const maxPrice = Math.max(...prices);
+                      return minPrice === maxPrice
+                        ? `₹${minPrice}`
+                        : `₹${minPrice} - ₹${maxPrice}`;
+                    })()}
+                  </div>
+                  <div className="text-sm text-blue-800 mt-1">
+                    <strong>Total Stock:</strong> {formData.sizes.reduce((sum, s) => sum + (Number(s.stock) || 0), 0)} units
+                  </div>
                 </div>
               )}
             </div>
 
-            {/* Product Identifiers */}
+            {/* Barcode */}
             <div className="bg-white rounded-xl border border-gray-200 p-6">
               <h2 className="text-lg font-medium mb-6">Product Identifiers</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    SKU
-                  </label>
-                  <input
-                    type="text"
-                    name="sku"
-                    value={formData.sku}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all"
-                    placeholder="SKU-12345"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Barcode
-                  </label>
-                  <input
-                    type="text"
-                    name="barcode"
-                    value={formData.barcode}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all"
-                    placeholder="1234567890123"
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Barcode
+                </label>
+                <input
+                  type="text"
+                  name="barcode"
+                  value={formData.barcode}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all"
+                  placeholder="1234567890123"
+                />
               </div>
             </div>
           </div>
         )}
 
-        {/* Specifications Tab */}
+        {/* Specifications Tab - same as before */}
         {activeTab === 'specs' && (
           <div className="space-y-8">
             <div className="bg-white rounded-xl border border-gray-200 p-6">
@@ -783,60 +1004,39 @@ const handleImageUpload = async (e) => {
           </div>
         )}
 
-        {/* Media Tab */}
+        {/* Media Tab - same as before */}
         {activeTab === 'media' && (
           <div className="space-y-8">
-            {/* Main Product Images */}
             <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-medium">Product Images</h2>
-                {uploadingImages && (
-                  <span className="text-sm text-blue-600">Uploading...</span>
-                )}
-              </div>
-
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                <label className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-gray-400 transition-colors bg-gray-50">
+                <label className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-gray-400 bg-gray-50">
                   <span className="text-3xl text-gray-400">+</span>
-                  <span className="text-xs text-gray-500 mt-1">Upload</span>
-                  <input
-                    type="file"
-                    multiple
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
+                  <input type="file" multiple accept="image/*" onChange={handleImageUpload} className="hidden" />
                 </label>
 
                 {formData.images.map((image, index) => (
                   <div key={index} className="relative aspect-square group">
-                    <Image
-                      src={image.url}
-                      alt={image.alt || `Product ${index + 1}`}
-                      fill
-                      className="object-cover rounded-lg"
-                    />
+                    <Image src={image.url} alt="Product" fill className="object-cover rounded-lg" />
                     <button
                       type="button"
-                      onClick={() => handleRemoveImage(index)}
-                      className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-sm"
+                      onClick={() => handleRemoveImage(index, image.publicId)} // publicId pass ho raha hai
+                      className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center"
                     >
                       ×
                     </button>
-                    {index === 0 && (
-                      <span className="absolute bottom-1 left-1 px-2 py-1 bg-black text-white text-xs rounded">
-                        Main
-                      </span>
-                    )}
                   </div>
                 ))}
               </div>
             </div>
+          </div>
+        )}
 
-            {/* Color Variants */}
+        {/* // Main Content mein Colors ka Section */}
+        {activeTab === 'colors' && (
+          <div className="space-y-8">
             <div className="bg-white rounded-xl border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-medium">Color Variants</h2>
+                <h2 className="text-lg font-medium">Product Colors</h2>
                 <button
                   type="button"
                   onClick={handleAddColor}
@@ -846,98 +1046,107 @@ const handleImageUpload = async (e) => {
                 </button>
               </div>
 
-              <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {formData.colors.map((color, index) => (
-                  <div key={index} className="border border-gray-200 rounded-lg p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Color Name
-                        </label>
+                  <div key={index} className="border border-gray-200 rounded-lg p-4 flex items-center gap-4">
+                    <div className="flex-1 space-y-3">
+                      <input
+                        type="text"
+                        placeholder="Color Name (e.g. Navy Blue)"
+                        value={color.name}
+                        onChange={(e) => handleColorChange(index, 'name', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none text-sm"
+                      />
+                      <div className="flex items-center gap-2">
                         <input
-                          type="text"
-                          value={color.name}
-                          onChange={(e) => handleColorChange(index, 'name', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all"
-                          placeholder="e.g. Navy Blue"
+                          type="color"
+                          value={color.hexCode}
+                          onChange={(e) => handleColorChange(index, 'hexCode', e.target.value)}
+                          className="w-10 h-10 rounded cursor-pointer border-none"
                         />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Hex Code
-                        </label>
-                        <div className="flex gap-2">
-                          <input
-                            type="color"
-                            value={color.hexCode}
-                            onChange={(e) => handleColorChange(index, 'hexCode', e.target.value)}
-                            className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
-                          />
-                          <input
-                            type="text"
-                            value={color.hexCode}
-                            onChange={(e) => handleColorChange(index, 'hexCode', e.target.value)}
-                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all"
-                            placeholder="#000000"
-                          />
-                        </div>
-                      </div>
-                      <div className="flex items-end">
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveColor(index)}
-                          className="w-full px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
-                        >
-                          Remove Color
-                        </button>
+                        <span className="text-xs text-gray-500 uppercase">{color.hexCode}</span>
                       </div>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveColor(index)}
+                      className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+                    >
+                      Remove
+                    </button>
                   </div>
                 ))}
-
-                {formData.colors.length === 0 && (
-                  <p className="text-center text-gray-500 py-8">
-                    No color variants added yet. Click "Add Color" to start.
-                  </p>
-                )}
               </div>
+              {formData.colors.length === 0 && (
+                <p className="text-center text-gray-500 py-4">No colors added yet.</p>
+              )}
             </div>
           </div>
         )}
-
-        {/* Inventory Tab */}
+        {/* Inventory Tab - Updated */}
         {activeTab === 'inventory' && (
           <div className="space-y-8">
+            {/* Stock Overview */}
             <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h2 className="text-lg font-medium mb-6">Size Inventory</h2>
+              <h2 className="text-lg font-medium mb-6">Stock Overview</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {formData.sizes.map((sizeItem, index) => (
-                  <div key={index} className="border border-gray-200 rounded-lg p-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Size {sizeItem.size}
-                    </label>
-                    <input
-                      type="number"
-                      value={sizeItem.stock}
-                      onChange={(e) => {
-                        const newSizes = [...formData.sizes];
-                        newSizes[index].stock = parseInt(e.target.value) || 0;
-                        setFormData({ ...formData, sizes: newSizes });
-                      }}
-                      min="0"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all"
-                      placeholder="Stock"
-                    />
+                  <div key={index} className="border border-gray-200 rounded-lg p-4 text-center">
+                    <div className="text-lg font-semibold">{sizeItem.size}</div>
+                    <div className="text-2xl font-bold text-blue-600">{sizeItem.stock || 0}</div>
+                    <div className="text-sm text-gray-500">units</div>
+                    {sizeItem.price > 0 && (
+                      <div className="text-sm text-green-600 mt-1">₹{sizeItem.price}</div>
+                    )}
                   </div>
                 ))}
               </div>
-              <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                <p className="text-sm text-blue-800">
-                  <strong>Total Stock:</strong> {formData.sizes.reduce((sum, s) => sum + (s.stock || 0), 0)} units
+
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <div className="text-sm text-blue-600 font-medium">Total Stock</div>
+                  <div className="text-2xl font-bold text-blue-900">
+                    {formData.sizes.reduce((sum, s) => sum + (Number(s.stock) || 0), 0)}
+                  </div>
+                </div>
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <div className="text-sm text-green-600 font-medium">Available Sizes</div>
+                  <div className="text-2xl font-bold text-green-900">
+                    {formData.sizes.filter(s => s.stock > 0).length}
+                  </div>
+                </div>
+                <div className="bg-yellow-50 p-4 rounded-lg">
+                  <div className="text-sm text-yellow-600 font-medium">Low Stock Threshold</div>
+                  <div className="text-2xl font-bold text-yellow-900">
+                    {formData.lowStockThreshold}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Low Stock Settings */}
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <h2 className="text-lg font-medium mb-6">Inventory Settings</h2>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Low Stock Threshold
+                </label>
+                <input
+                  type="number"
+                  name="lowStockThreshold"
+                  value={formData.lowStockThreshold}
+                  onChange={handleChange}
+                  min="0"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none transition-all"
+                  placeholder="5"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Get notified when stock falls below this number
                 </p>
               </div>
             </div>
 
+            {/* Care Instructions */}
             <div className="bg-white rounded-xl border border-gray-200 p-6">
               <h2 className="text-lg font-medium mb-6">Care Instructions</h2>
               <div className="space-y-3">
@@ -982,7 +1191,7 @@ const handleImageUpload = async (e) => {
           </div>
         )}
 
-        {/* SEO Tab */}
+        {/* SEO Tab - same as before */}
         {activeTab === 'seo' && (
           <div className="space-y-8">
             <div className="bg-white rounded-xl border border-gray-200 p-6">

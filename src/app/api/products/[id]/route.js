@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'; // Fix for ReferenceError
 import connectDB from '@/lib/mongodb';
 import Product from '@/models/Product';
-import Category from '@/models/Category'; // Fix for "Schema hasn't been registered"
 
 export async function GET(request, { params }) {
   try {
