@@ -35,9 +35,9 @@ export default function WhatsAppOrderButton({ product }) {
 
     if (selectedSize) {
       message += `*Size:* ${selectedSize}\n`;
-      message += `*Price:* ₹${getSelectedSizePrice()}\n`;
+      message += `*Price:* Rs ${getSelectedSizePrice()}\n`;
     } else {
-      message += `*Price:* ₹${getProductPrice(product)}\n`;
+      message += `*Price:* Rs ${getProductPrice(product)}\n`;
     }
 
     if (selectedColor) {
@@ -45,7 +45,7 @@ export default function WhatsAppOrderButton({ product }) {
     }
 
     message += `*Quantity:* ${quantity}\n`;
-    message += `*Total:* ₹${getSelectedSizePrice() * quantity}\n\n`;
+    message += `*Total:* Rs ${getSelectedSizePrice() * quantity}\n\n`;
 
     if (product.material) {
       message += `*Material:* ${product.material}\n`;
@@ -103,7 +103,7 @@ export default function WhatsAppOrderButton({ product }) {
                 `}
               >
                 <div>{size.size}</div>
-                <div className="text-[10px] opacity-60 mt-1">₹{size.price}</div>
+                <div className="text-[10px] opacity-60 mt-1">Rs {size.price}</div>
                 {size.stock <= 0 && (
                   <div className="text-[8px] text-red-500 font-bold mt-1">Out</div>
                 )}
@@ -112,7 +112,7 @@ export default function WhatsAppOrderButton({ product }) {
           </div>
           {selectedSize && (
             <p className="text-[10px] text-text opacity-60 mt-2">
-              Selected: {selectedSize} - ₹{getSelectedSizePrice()}
+              Selected: {selectedSize} - Rs {getSelectedSizePrice()}
             </p>
           )}
         </div>
@@ -180,7 +180,7 @@ export default function WhatsAppOrderButton({ product }) {
             Total Amount
           </span>
           <span className="text-2xl font-black text-text">
-            ₹{getSelectedSizePrice() * quantity}
+            Rs {getSelectedSizePrice() * quantity}
           </span>
         </div>
       </div>

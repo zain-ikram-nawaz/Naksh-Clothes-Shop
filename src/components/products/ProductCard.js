@@ -58,7 +58,7 @@ function isProductOnSale(product) {
 function getPriceRange(product) {
   // If basePrice exists, show that
   if (product.basePrice) {
-    return `₹${product.basePrice}`;
+    return `Rs ${product.basePrice}`;
   }
 
   // Calculate price range from sizes
@@ -73,12 +73,12 @@ function getPriceRange(product) {
     const maxPrice = Math.max(...prices);
 
     return minPrice === maxPrice
-      ? `₹${minPrice}`
-      : `₹${minPrice} - ₹${maxPrice}`;
+      ? `Rs ${minPrice}`
+      : `Rs ${minPrice} - Rs ${maxPrice}`;
   }
 
   // Fallback
-  return product.price ? `₹${product.price}` : 'Price not set';
+  return product.price ? `Rs ${product.price}` : 'Price not set';
 }
 
 export default function ProductCard({ product }) {
@@ -172,13 +172,13 @@ export default function ProductCard({ product }) {
               </span>
             ) : (
               <span className="text-sm font-black text-text">
-                ₹{currentPrice}
+                Rs {currentPrice}
               </span>
             )}
 
             {comparePrice && (
               <span className="text-xs text-text opacity-40 line-through font-light">
-                ₹{comparePrice}
+                Rs {comparePrice}
               </span>
             )}
           </div>

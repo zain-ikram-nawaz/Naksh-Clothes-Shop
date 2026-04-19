@@ -801,8 +801,8 @@ export default function ProductForm({ product = null }) {
                       const minPrice = Math.min(...prices);
                       const maxPrice = Math.max(...prices);
                       return minPrice === maxPrice
-                        ? `₹${minPrice}`
-                        : `₹${minPrice} - ₹${maxPrice}`;
+                        ? `Rs ${minPrice}`
+                        : `Rs ${minPrice} - Rs ${maxPrice}`;
                     })()}
                   </div>
                   <div className="text-sm text-blue-800 mt-1">
@@ -1096,7 +1096,7 @@ export default function ProductForm({ product = null }) {
                     <div className="text-2xl font-bold text-blue-600">{sizeItem.stock || 0}</div>
                     <div className="text-sm text-gray-500">units</div>
                     {sizeItem.price > 0 && (
-                      <div className="text-sm text-green-600 mt-1">₹{sizeItem.price}</div>
+                      <div className="text-sm text-green-600 mt-1">Rs {sizeItem.price}</div>
                     )}
                   </div>
                 ))}

@@ -41,7 +41,7 @@ export async function POST(request) {
       name,
       email,
       password: hashedPassword,
-      role: 'admin',
+      role: 'user',
     });
 
     // Generate token

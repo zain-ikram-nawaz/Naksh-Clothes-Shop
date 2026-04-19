@@ -19,12 +19,11 @@ export default function AdminProductsPage() {
   };
 
   useEffect(() => { fetchProducts(); }, [filter]);
-
   // Price calculation function
   const getProductPriceRange = (product) => {
     // First try basePrice
     if (product.basePrice) {
-      return `₹${product.basePrice}`;
+      return `Rs ${product.basePrice}`;
     }
 
     // Then try sizes pricing
@@ -39,13 +38,13 @@ export default function AdminProductsPage() {
       const maxPrice = Math.max(...prices);
 
       return minPrice === maxPrice
-        ? `₹${minPrice}`
-        : `₹${minPrice} - ₹${maxPrice}`;
+        ? `Rs ${minPrice}`
+        : `Rs ${minPrice} - Rs ${maxPrice}`;
     }
 
     // Fallback to old price field (if exists)
     if (product.price) {
-      return `₹${product.price}`;
+      return `Rs ${product.price}`;
     }
 
     return 'No price';
@@ -59,6 +58,30 @@ export default function AdminProductsPage() {
     return product.stock || 0;
   };
 
+  const handleDelete = async (id) => {
+    if (!confirm('Are you sure you want to delete this product?')) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/admin/products?id=${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        // UI se product remove karne ke liye state update karein
+        setProducts(products.filter(p => p._id !== id));
+        alert('Product deleted successfully');
+      } else {
+        alert(data.message || 'Failed to delete product');
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
+      alert('Something went wrong while deleting');
+    }
+  };
   return (
     <div className="space-y-12 px-4">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-black/5 pb-10">
@@ -152,14 +175,9 @@ export default function AdminProductsPage() {
                     </div>
                   </td>
                   <td className="p-6 text-right space-x-4">
-                    <Link  href={`/admin/products/add?edit=${p._id}`} className="text-[10px] font-black uppercase tracking-tighter hover:underline">Edit</Link>
+                    <Link href={`/admin/products/add?edit=${p._id}`} className="text-[10px] font-black uppercase tracking-tighter hover:underline">Edit</Link>
                     <button
-                      onClick={() => {
-                        if (confirm('Are you sure you want to delete this product?')) {
-                          // Add delete functionality here
-                          console.log('Delete product:', p._id);
-                        }
-                      }}
+                      onClick={() => handleDelete(p._id)} // Fixed here
                       className="text-[10px] font-black uppercase tracking-tighter text-red-400 hover:text-red-600"
                     >
                       Delete
@@ -191,8 +209,9 @@ export default function AdminProductsPage() {
                 <span className="text-[9px] text-gray-400 ml-2">• {getTotalStock(p)} units</span>
               </div>
               <div className="flex gap-2">
-                <Link  href={`/admin/products/add?edit=${p._id}`} className="text-[10px] font-black uppercase tracking-tighter hover:underline">Edit</Link>
-                <button className="text-[10px] font-black uppercase tracking-tighter text-red-400 hover:text-red-600">Delete</button>
+                <Link href={`/admin/products/add?edit=${p._id}`} className="text-[10px] font-black uppercase tracking-tighter hover:underline">Edit</Link>
+                <button onClick={() => handleDelete(p._id)} // Fixed here
+                  className="text-[10px] font-black uppercase tracking-tighter text-red-400 hover:text-red-600">Delete</button>
               </div>
             </div>
           </div>

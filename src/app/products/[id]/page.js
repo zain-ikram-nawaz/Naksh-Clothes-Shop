@@ -28,15 +28,15 @@ function getComparePrice(product) {
 }
 
 function getPriceRange(product) {
-  if (product.basePrice) return `₹${product.basePrice}`;
+  if (product.basePrice) return `Rs ${product.basePrice}`;
   if (product.sizes && product.sizes.length > 0) {
     const prices = product.sizes.filter(size => size.price > 0).map(size => size.price);
     if (prices.length === 0) return 'Price not set';
     const minPrice = Math.min(...prices);
     const maxPrice = Math.max(...prices);
-    return minPrice === maxPrice ? `₹${minPrice}` : `₹${minPrice} - ₹${maxPrice}`;
+    return minPrice === maxPrice ? `Rs ${minPrice}` : `Rs ${minPrice} - Rs ${maxPrice}`;
   }
-  return product.price ? `₹${product.price}` : 'Price not set';
+  return product.price ? `Rs ${product.price}` : 'Price not set';
 }
 
 function isProductOnSale(product) {
@@ -145,18 +145,18 @@ export default async function ProductDetailPage({ params }) {
                     </span>
                     {comparePrice && (
                       <span className="text-xl text-text opacity-40 line-through font-medium">
-                        ₹{comparePrice}
+                        Rs {comparePrice}
                       </span>
                     )}
                   </div>
                 ) : (
                   <div className="flex items-baseline gap-4">
                     <span className="text-4xl font-black text-text tracking-tighter">
-                      ₹{currentPrice}
+                      Rs {currentPrice}
                     </span>
                     {comparePrice && (
                       <span className="text-xl text-text opacity-40 line-through font-medium">
-                        ₹{comparePrice}
+                        Rs {comparePrice}
                       </span>
                     )}
                   </div>
@@ -202,7 +202,7 @@ export default async function ProductDetailPage({ params }) {
                         {size.size}
                       </div>
                       <div className="text-[10px] text-text opacity-60 mt-1">
-                        ₹{size.price}
+                        Rs {size.price}
                       </div>
                       {size.stock <= 0 && (
                         <div className="text-[8px] text-red-500 font-bold uppercase tracking-widest mt-1">

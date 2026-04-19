@@ -136,7 +136,6 @@ async function updateProduct(request) {
   }
 }
 
-// DELETE - Delete product (Admin) - WITH CLOUDINARY IMAGE DELETION
 async function deleteProduct(request) {
   try {
     await connectDB();
@@ -145,51 +144,53 @@ async function deleteProduct(request) {
     const id = searchParams.get('id');
 
     if (!id) {
-      return NextResponse.json(
-        { success: false, message: 'Product ID is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, message: 'Product ID is required' }, { status: 400 });
     }
 
-    // Find product first to get image public IDs
     const product = await Product.findById(id);
 
     if (!product) {
-      return NextResponse.json(
-        { success: false, message: 'Product not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, message: 'Product not found' }, { status: 404 });
     }
 
-    // Collect all image public IDs
+    // --- Image ID Collection ---
     const publicIds = [];
 
-    // Main images
-    if (product.images && product.images.length > 0) {
+    // 1. Main images
+    if (product.images?.length > 0) {
       product.images.forEach(img => {
         if (img.publicId) publicIds.push(img.publicId);
       });
     }
 
-    // Color images
-    if (product.colors && product.colors.length > 0) {
+    // 2. Color images
+    if (product.colors?.length > 0) {
       product.colors.forEach(color => {
-        if (color.images && color.images.length > 0) {
-          color.images.forEach(img => {
-            if (img.publicId) publicIds.push(img.publicId);
-          });
-        }
+        color.images?.forEach(img => {
+          if (img.publicId) publicIds.push(img.publicId);
+        });
       });
     }
 
-    // Delete images from Cloudinary
+    // --- CONSOLE LOG FOR VERIFICATION ---
+    console.log("-----------------------------------------");
+    console.log(`🗑️ Deleting Product: ${product.name}`);
+    console.log(`📸 Images found to delete: ${publicIds.length}`);
+    console.log(`🆔 Public IDs:`, publicIds);
+    console.log("-----------------------------------------");
+
+    // Delete from Cloudinary
     if (publicIds.length > 0) {
-      await deleteMultipleImages(publicIds);
-      console.log(`Deleted ${publicIds.length} images from Cloudinary`);
+      // Yahan hum result ko await kar ke log karwa sakte hain
+      const cloudinaryResult = await deleteMultipleImages(publicIds);
+      console.log("✅ Cloudinary Deletion Result:", cloudinaryResult);
+    } else {
+      console.log("ℹ️ No images found in Cloudinary for this product.");
     }
 
-    // Delete product from database
+    // Delete from DB
     await Product.findByIdAndDelete(id);
+    console.log(`🚀 Product ${id} deleted from MongoDB.`);
 
     return NextResponse.json({
       success: true,
@@ -197,7 +198,7 @@ async function deleteProduct(request) {
       deletedImages: publicIds.length,
     });
   } catch (error) {
-    console.error('Delete product error:', error);
+    console.error('❌ Delete product error:', error);
     return NextResponse.json(
       { success: false, message: 'Server error', error: error.message },
       { status: 500 }
